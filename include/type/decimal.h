@@ -8,8 +8,8 @@
  *
  * @copyright Copyright (c) 2026
  */
-#ifndef DECIMAL_H
-#define DECIMAL_H
+#ifndef TYPE_DECIMAL_H
+#define TYPE_DECIMAL_H
 #include <type_traits>
 
 #include "object.h"

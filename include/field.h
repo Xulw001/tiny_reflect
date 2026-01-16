@@ -14,8 +14,8 @@
 #define FIELD_H
 #include <memory>
 
-#include "decimal.h"
-#include "integer.h"
+#include "type/decimal.h"
+#include "type/integer.h"
 #include "type_traits.h"
 
 namespace reflect {

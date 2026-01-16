@@ -8,8 +8,8 @@
  *
  * @copyright Copyright (c) 2026
  */
-#ifndef INTEGER_H
-#define INTEGER_H
+#ifndef TYPE_INTEGER_H
+#define TYPE_INTEGER_H
 
 #include <type_traits>
 
@@ -40,11 +40,11 @@ struct Integer : public ObjectInternal {
         long l;
         long long ll;
 
-        char uc;
-        short us;
-        int ui;
-        long ul;
-        long long ull;
+        unsigned char uc;
+        unsigned short us;
+        unsigned int ui;
+        unsigned long ul;
+        unsigned long long ull;
     };
 
    public:
