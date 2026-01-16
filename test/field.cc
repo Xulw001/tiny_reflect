@@ -13,7 +13,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "type.h"
+#include "type_info.h"
 
 struct A : public reflect::Constructible<A> {
     int a;
@@ -57,100 +57,100 @@ void test_field() {
 
 void print_value(const reflect::Field& field, reflect::ConstObject obj) {
     switch (field->type()) {
-        case reflect::TypeEnum::CPPTYPE_BOOL:
-            std::cout << field->name() << ": " << std::boolalpha << field->get<bool>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT8:
-            std::cout << field->name() << ": " << field->get<char>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT8:
-            std::cout << field->name() << ": " << field->get<char>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT16:
-            std::cout << field->name() << ": " << field->get<short>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT16:
-            std::cout << field->name() << ": " << field->get<unsigned short>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT32:
-            std::cout << field->name() << ": " << field->get<int>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT32:
-            std::cout << field->name() << ": " << field->get<unsigned int>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT64:
-            std::cout << field->name() << ": " << field->get<long long>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT64:
-            std::cout << field->name() << ": " << field->get<unsigned long long>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_LONG:
-            std::cout << field->name() << ": " << field->get<long>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_ULONG:
-            std::cout << field->name() << ": " << field->get<unsigned long>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_FLOAT:
-            std::cout << field->name() << ": " << field->get<float>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_DOUBLE:
-            std::cout << field->name() << ": " << field->get<double>(obj) << std::endl;
-            break;
-        case reflect::TypeEnum::CPPTYPE_STRING:
-            std::cout << field->name() << ": " << field->get<std::string>(obj) << std::endl;
-            break;
-        default:
-            std::cout << field->name() << ": (unknown type)" << std::endl;
-            break;
+    case reflect::TypeEnum::CPPTYPE_BOOL:
+        std::cout << field->name() << ": " << std::boolalpha << field->get<bool>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT8:
+        std::cout << field->name() << ": " << field->get<char>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT8:
+        std::cout << field->name() << ": " << field->get<char>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT16:
+        std::cout << field->name() << ": " << field->get<short>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT16:
+        std::cout << field->name() << ": " << field->get<unsigned short>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT32:
+        std::cout << field->name() << ": " << field->get<int>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT32:
+        std::cout << field->name() << ": " << field->get<unsigned int>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT64:
+        std::cout << field->name() << ": " << field->get<long long>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT64:
+        std::cout << field->name() << ": " << field->get<unsigned long long>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_LONG:
+        std::cout << field->name() << ": " << field->get<long>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_ULONG:
+        std::cout << field->name() << ": " << field->get<unsigned long>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_FLOAT:
+        std::cout << field->name() << ": " << field->get<float>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_DOUBLE:
+        std::cout << field->name() << ": " << field->get<double>(obj) << std::endl;
+        break;
+    case reflect::TypeEnum::CPPTYPE_STRING:
+        std::cout << field->name() << ": " << field->get<std::string>(obj) << std::endl;
+        break;
+    default:
+        std::cout << field->name() << ": (unknown type)" << std::endl;
+        break;
     }
 }
 
 void set_value(const reflect::Field& field, reflect::Object obj) {
     switch (field->type()) {
-        case reflect::TypeEnum::CPPTYPE_BOOL:
-            field->set(obj, true);
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT8:
-            field->set(obj, 'A');
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT8:
-            field->set(obj, 0x7f);
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT16:
-            field->set(obj, 12345);
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT16:
-            field->set(obj, -12345);
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT32:
-            field->set(obj, 123);
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT32:
-            field->set(obj, -123);
-            break;
-        case reflect::TypeEnum::CPPTYPE_INT64:
-            field->set(obj, 1234567890123LL);
-            break;
-        case reflect::TypeEnum::CPPTYPE_UINT64:
-            field->set(obj, 1234567890123ULL);
-            break;
-        case reflect::TypeEnum::CPPTYPE_LONG:
-            field->set(obj, 100000L);
-            break;
-        case reflect::TypeEnum::CPPTYPE_ULONG:
-            field->set(obj, -100000L);
-            break;
-        case reflect::TypeEnum::CPPTYPE_FLOAT:
-            field->set(obj, 3.14f);
-            break;
-        case reflect::TypeEnum::CPPTYPE_DOUBLE:
-            field->set(obj, 2.71828);
-            break;
-        case reflect::TypeEnum::CPPTYPE_STRING:
-            field->set(obj, "Hello, World!");
-            break;
-        default:
-            break;
+    case reflect::TypeEnum::CPPTYPE_BOOL:
+        field->set(obj, true);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT8:
+        field->set(obj, 'A');
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT8:
+        field->set(obj, 0x7f);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT16:
+        field->set(obj, 12345);
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT16:
+        field->set(obj, -12345);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT32:
+        field->set(obj, 123);
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT32:
+        field->set(obj, -123);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT64:
+        field->set(obj, 1234567890123LL);
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT64:
+        field->set(obj, 1234567890123ULL);
+        break;
+    case reflect::TypeEnum::CPPTYPE_LONG:
+        field->set(obj, 100000L);
+        break;
+    case reflect::TypeEnum::CPPTYPE_ULONG:
+        field->set(obj, -100000L);
+        break;
+    case reflect::TypeEnum::CPPTYPE_FLOAT:
+        field->set(obj, 3.14f);
+        break;
+    case reflect::TypeEnum::CPPTYPE_DOUBLE:
+        field->set(obj, 2.71828);
+        break;
+    case reflect::TypeEnum::CPPTYPE_STRING:
+        field->set(obj, "Hello, World!");
+        break;
+    default:
+        break;
     }
 }
 
@@ -177,6 +177,20 @@ void test_type() {
     }
 }
 
+void test_manager() {
+    auto& type_A = reflect::TypeInfo().GetInstance().regist<A>("A");
+    type_A->field("a", &A::a)
+        .field("b", &A::b)
+        .field("c", &A::c)
+        .field("d", &A::d)
+        .field("e", &A::e)
+        .field("f", &A::f)
+        .field("g", &A::g);
+    auto& type = reflect::TypeInfo().GetInstance().load("A");
+    std::cout << "Type name: " << type->name() << std::endl;
+    std::cout << "Field count: " << type->field_count() << std::endl;
+}
+
 int main(int argc, char** argv) {
     if (argc > 1) {
         std::string arg = argv[1];
@@ -186,8 +200,11 @@ int main(int argc, char** argv) {
         } else if (arg == "type") {
             test_type();
             return 0;
+        } else if (arg == "manager") {
+            test_manager();
+            return 0;
         }
     }
-    std::cout << "Usage: " << argv[0] << " [field|type]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " [field|type|manager]" << std::endl;
     return 0;
 }
