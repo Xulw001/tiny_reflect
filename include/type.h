@@ -16,6 +16,7 @@
 #include "field/bool.h"
 #include "field/decimal.h"
 #include "field/integer.h"
+#include "field/object.h"
 #include "field/text.h"
 
 namespace reflect {
