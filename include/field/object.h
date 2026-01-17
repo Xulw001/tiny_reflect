@@ -16,6 +16,7 @@
 #define FIELD_OBJECT_H
 
 #include "field.h"
+#include "type_id.h"
 
 namespace reflect {
 template <typename C, typename T>
@@ -29,10 +30,17 @@ struct FieldBase<C, T, typename std::enable_if<std::is_base_of<ObjectInternal, T
      * @param ptr A pointer to the ObjectInternal member of class C.
      */
     explicit FieldBase(const char* name, T C::* ptr)
-        : ptr_(ptr), FieldInternal(name, TypeEnum::CPPTYPE_OBJECT, false) { ; }
+        : ptr_(ptr), type_id_(get_type_id<T>()), FieldInternal(name, TypeEnum::CPPTYPE_OBJECT, false) {}
 
     FieldBase(const FieldBase&) = delete;
     FieldBase& operator=(const FieldBase&) = delete;
+
+    /**
+     * @brief Retrieves the type ID of the member.
+     *
+     * @return The type ID of the member.
+     */
+    virtual size_t type_id() const { return type_id_; }
 
     /**
      * @brief Retrieves the ObjectInternal from the given object.
@@ -42,6 +50,16 @@ struct FieldBase<C, T, typename std::enable_if<std::is_base_of<ObjectInternal, T
      */
     virtual ConstObject getObject(ConstObject obj) const {
         return static_cast<const C&>(obj).*ptr_;
+    };
+
+    /**
+     * @brief Retrieves the ObjectInternal from the given object.
+     *
+     * @param obj The object from which to retrieve the ObjectInternal.
+     * @return The ObjectInternal of the member.
+     */
+    virtual Object getObject(Object obj) const {
+        return static_cast<C&>(obj).*ptr_;
     };
 
     /**
@@ -55,7 +73,8 @@ struct FieldBase<C, T, typename std::enable_if<std::is_base_of<ObjectInternal, T
     }
 
    private:
-    T C::* ptr_;  ///< Pointer to the object member
+    T C::* ptr_;      ///< Pointer to the object member
+    size_t type_id_;  ///< The type ID of the object
 };
 }  // namespace reflect
 

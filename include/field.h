@@ -57,6 +57,13 @@ struct FieldInternal : public ObjectInternal {
      */
     bool is_array() const { return array_; }
 
+    /**
+     * @brief Get the type id of the field.
+     *
+     * @return size_t The type id of the field.
+     */
+    virtual size_t type_id() const { return type_; }
+
     // Template methods for getting values of different types
     template <typename T>
     typename std::enable_if<std::is_same<T, bool>::value, bool>::type get(ConstObject obj) const {
@@ -87,6 +94,14 @@ struct FieldInternal : public ObjectInternal {
      * @return ConstObject The associated object.
      */
     virtual ConstObject getObject(ConstObject obj) const { return obj; };
+
+    /**
+     * @brief Get the object associated with this field.
+     *
+     * @param obj The object from which to get the field.
+     * @return Object The associated object.
+     * */
+    virtual Object getObject(Object obj) const { return obj; };
 
     // Template methods for setting values of different types
     void set(Object obj, bool v) const { setBool(obj, v); }

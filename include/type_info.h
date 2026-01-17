@@ -32,7 +32,7 @@ class TypeInfo {
      */
     template <typename T>
     Type& regist(const char* name) {
-        return map_.emplace(name, new TypeInternal(name, &T::constructor)).first->second;
+        return map_.emplace(name, new TypeBase<T>(name, &T::constructor)).first->second;
     }
 
     /**

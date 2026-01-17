@@ -18,6 +18,7 @@
 #include "field/integer.h"
 #include "field/object.h"
 #include "field/text.h"
+#include "type_id_info.h"
 
 namespace reflect {
 
@@ -28,10 +29,12 @@ struct TypeInternal : public ObjectInternal {
      *
      * @param name The name of the type.
      * @param constructor The constructor for creating instances of the type.
+     * @param type_id The type ID associated with the type.
      */
-    explicit TypeInternal(const char* name, const Constructor& constructor)
-        : name_(name), constructor_(constructor) {
-          };
+    explicit TypeInternal(const char* name, const Constructor& constructor, const size_t type_id)
+        : name_(name), constructor_(constructor), type_id_(type_id) {
+        TypeIdInfo::GetInstance().regist_type(type_id_, name_);
+    };
 
     /**
      * @brief Registers a field with the type.
@@ -101,8 +104,22 @@ struct TypeInternal : public ObjectInternal {
     const char* name_;         ///< The name of the type.
     Constructor constructor_;  ///< The constructor for creating instances of the type.
     std::vector<Field> map_;   ///< A vector storing the fields associated with the type.
+    size_t type_id_;           ///< The type id of the type.
 };
 
+/**
+ * @brief A template class representing a type with a given name and constructor.
+ */
+template <typename T>
+struct TypeBase : public TypeInternal {
+   public:
+    explicit TypeBase(const char* name, const Constructor& constructor)
+        : TypeInternal(name, constructor, get_type_id<T>()) {};
+};
+
+/**
+ * @brief A unique pointer to a TypeInternal object.
+ */
 using Type = std::unique_ptr<TypeInternal>;
 
 }  // namespace reflect
