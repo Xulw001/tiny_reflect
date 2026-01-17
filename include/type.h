@@ -18,6 +18,12 @@
 #include "field/integer.h"
 #include "field/object.h"
 #include "field/text.h"
+#include "repeated_field.h"
+#include "repeated_field/bool.h"
+#include "repeated_field/decimal.h"
+#include "repeated_field/integer.h"
+#include "repeated_field/object.h"
+#include "repeated_field/text.h"
 #include "type_id_info.h"
 
 namespace reflect {
