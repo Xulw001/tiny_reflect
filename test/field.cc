@@ -59,6 +59,19 @@ void test_field() {
     std::cout << "g: " << field_g.get<bool>(obj) << std::endl;
 }
 
+void field_loop(const reflect::Type& type,
+                reflect::Object obj,
+                void (*print_value)(const reflect::Field& field, reflect::ConstObject obj),
+                void (*set_value)(const reflect::Field& field, reflect::Object obj)) {
+    for (size_t i = 0; i < type->field_count(); ++i) {
+        const reflect::Field& field = type->field(i);
+        if (print_value)
+            print_value(field, obj);
+        if (set_value)
+            set_value(field, obj);
+    }
+}
+
 void print_value(const reflect::Field& field, reflect::ConstObject obj) {
     switch (field->type()) {
     case reflect::TypeEnum::CPPTYPE_BOOL:
@@ -103,9 +116,15 @@ void print_value(const reflect::Field& field, reflect::ConstObject obj) {
     case reflect::TypeEnum::CPPTYPE_STRING:
         std::cout << field->name() << ": " << field->get<std::string>(obj) << std::endl;
         break;
-    case reflect::TypeEnum::CPPTYPE_OBJECT:
-        std::cout << field->name() << ": (object)" << std::endl;
-        break;
+    case reflect::TypeEnum::CPPTYPE_OBJECT: {
+        std::cout << field->name() << ": (object)" << " => {{" << std::endl;
+        const char* name = reflect::TypeIdInfo::GetInstance().get_type_name(field->type_id());
+        if (name == nullptr) throw std::runtime_error("unknown type");
+        auto& type = reflect::TypeInfo().GetInstance().load(name);
+        auto& sub_obj = field->getObject(obj);
+        field_loop(type, const_cast<reflect::Object&>(sub_obj), print_value, nullptr);
+        std::cout << "}}" << std::endl;
+    } break;
     default:
         std::cout << field->name() << ": (unknown type)" << std::endl;
         break;
@@ -156,16 +175,20 @@ void set_value(const reflect::Field& field, reflect::Object obj) {
     case reflect::TypeEnum::CPPTYPE_STRING:
         field->set(obj, "Hello, World!");
         break;
-    case reflect::TypeEnum::CPPTYPE_OBJECT:
-        // TODO(how to fetch field tpye)
-        break;
+    case reflect::TypeEnum::CPPTYPE_OBJECT: {
+        const char* name = reflect::TypeIdInfo::GetInstance().get_type_name(field->type_id());
+        if (name == nullptr) throw std::runtime_error("unknown type");
+        auto& type = reflect::TypeInfo().GetInstance().load(name);
+        auto& sub_obj = field->getObject(obj);
+        field_loop(type, sub_obj, nullptr, set_value);
+    } break;
     default:
         break;
     }
 }
 
 void test_type() {
-    reflect::Type type(new reflect::TypeInternal("A", &A::constructor));
+    reflect::Type type(new reflect::TypeBase<A>("A", &A::constructor));
     type->field("a", &A::a)
         .field("b", &A::b)
         .field("c", &A::c)
@@ -178,13 +201,12 @@ void test_type() {
 
     std::cout << "Type name: " << type->name() << std::endl;
     std::cout << "Field count: " << type->field_count() << std::endl;
-    for (size_t i = 0; i < type->field_count(); ++i) {
-        const reflect::Field& field = type->field(i);
-        print_value(field, obj);
-        set_value(field, obj);
-        std::cout << " => ";
-        print_value(field, obj);
-    }
+    std::cout << "before: {" << std::endl;
+    field_loop(type, obj, print_value, set_value);
+    std::cout << "}" << std::endl;
+    std::cout << "after: {" << std::endl;
+    field_loop(type, obj, print_value, nullptr);
+    std::cout << "}" << std::endl;
 }
 
 void test_manager() {
@@ -214,16 +236,15 @@ void test_object() {
     auto& type_B = reflect::TypeInfo().GetInstance().regist<B>("B");
     type_B->field("a", &B::a);
 
+    auto obj = type_B->create();
     std::cout << "Type name: " << type_B->name() << std::endl;
     std::cout << "Field count: " << type_B->field_count() << std::endl;
-    auto obj = type_B->create();
-    for (size_t i = 0; i < type_B->field_count(); ++i) {
-        const reflect::Field& field = type_B->field(i);
-        print_value(field, obj);
-        set_value(field, obj);
-        std::cout << " => ";
-        print_value(field, obj);
-    }
+    std::cout << "before: {" << std::endl;
+    field_loop(type_B, obj, print_value, set_value);
+    std::cout << "}" << std::endl;
+    std::cout << "after: {" << std::endl;
+    field_loop(type_B, obj, print_value, nullptr);
+    std::cout << "}" << std::endl;
 }
 
 int main(int argc, char** argv) {
