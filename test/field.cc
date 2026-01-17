@@ -25,6 +25,10 @@ struct A : public reflect::Constructible<A> {
     bool g;
 };
 
+struct B : public reflect::Constructible<B> {
+    A a;
+};
+
 /**
  * @brief Tests the functionality of the reflect::FieldBase class.
  */
@@ -99,6 +103,9 @@ void print_value(const reflect::Field& field, reflect::ConstObject obj) {
     case reflect::TypeEnum::CPPTYPE_STRING:
         std::cout << field->name() << ": " << field->get<std::string>(obj) << std::endl;
         break;
+    case reflect::TypeEnum::CPPTYPE_OBJECT:
+        std::cout << field->name() << ": (object)" << std::endl;
+        break;
     default:
         std::cout << field->name() << ": (unknown type)" << std::endl;
         break;
@@ -149,6 +156,9 @@ void set_value(const reflect::Field& field, reflect::Object obj) {
     case reflect::TypeEnum::CPPTYPE_STRING:
         field->set(obj, "Hello, World!");
         break;
+    case reflect::TypeEnum::CPPTYPE_OBJECT:
+        // TODO(how to fetch field tpye)
+        break;
     default:
         break;
     }
@@ -191,10 +201,42 @@ void test_manager() {
     std::cout << "Field count: " << type->field_count() << std::endl;
 }
 
+void test_object() {
+    auto& type_A = reflect::TypeInfo().GetInstance().regist<A>("A");
+    type_A->field("a", &A::a)
+        .field("b", &A::b)
+        .field("c", &A::c)
+        .field("d", &A::d)
+        .field("e", &A::e)
+        .field("f", &A::f)
+        .field("g", &A::g);
+
+    auto& type_B = reflect::TypeInfo().GetInstance().regist<B>("B");
+    type_B->field("a", &B::a);
+
+    std::cout << "Type name: " << type_B->name() << std::endl;
+    std::cout << "Field count: " << type_B->field_count() << std::endl;
+    auto obj = type_B->create();
+    for (size_t i = 0; i < type_B->field_count(); ++i) {
+        const reflect::Field& field = type_B->field(i);
+        print_value(field, obj);
+        set_value(field, obj);
+        std::cout << " => ";
+        print_value(field, obj);
+    }
+}
+
 int main(int argc, char** argv) {
     if (argc > 1) {
         std::string arg = argv[1];
         if (arg == "field") {
+            if (argc > 2) {
+                std::string arg1 = argv[2];
+                if (arg1 == "object") {
+                    test_object();
+                    return 0;
+                }
+            }
             test_field();
             return 0;
         } else if (arg == "type") {
@@ -205,6 +247,6 @@ int main(int argc, char** argv) {
             return 0;
         }
     }
-    std::cout << "Usage: " << argv[0] << " [field|type|manager]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " (field [object] | type | manager)" << std::endl;
     return 0;
 }
