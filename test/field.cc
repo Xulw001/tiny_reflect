@@ -29,6 +29,15 @@ struct B : public reflect::Constructible<B> {
     A a;
 };
 
+struct C : public reflect::Constructible<C> {
+    std::vector<A> a;
+    std::vector<B> b;
+    std::vector<long> c;
+    std::vector<bool> d;
+    std::vector<std::string> e;
+    std::vector<float> f;
+};
+
 /**
  * @brief Tests the functionality of the reflect::FieldBase class.
  */
@@ -247,6 +256,175 @@ void test_object() {
     std::cout << "}" << std::endl;
 }
 
+void print_repeated_value(const reflect::RepeatedField& field, reflect::ConstObject obj) {
+    if (!field->is_array()) return;
+    std::cout << field->name() << ": (array)" << " => [" << std::endl;
+    for (int i = 0; i < field->size(obj); ++i) {
+        switch (field->type()) {
+        case reflect::TypeEnum::CPPTYPE_BOOL:
+            std::cout << std::boolalpha << field->get<bool>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_INT8:
+            std::cout << field->get<char>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_UINT8:
+            std::cout << field->get<char>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_INT16:
+            std::cout << field->get<short>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_UINT16:
+            std::cout << field->get<unsigned short>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_INT32:
+            std::cout << field->get<int>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_UINT32:
+            std::cout << field->get<unsigned int>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_INT64:
+            std::cout << field->get<long long>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_UINT64:
+            std::cout << field->get<unsigned long long>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_LONG:
+            std::cout << field->get<long>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_ULONG:
+            std::cout << field->get<unsigned long>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_FLOAT:
+            std::cout << field->get<float>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_DOUBLE:
+            std::cout << field->get<double>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_STRING:
+            std::cout << field->get<std::string>(obj, i) << ",";
+            break;
+        case reflect::TypeEnum::CPPTYPE_OBJECT: {
+            std::cout << "(object) => {{" << std::endl;
+            const char* name = reflect::TypeIdInfo::GetInstance().get_type_name(field->type_id());
+            if (name == nullptr) throw std::runtime_error("unknown type");
+            auto& type = reflect::TypeInfo().GetInstance().load(name);
+            auto& sub_obj = field->getObject(obj, i);
+            field_loop(type, const_cast<reflect::Object&>(sub_obj), print_value, nullptr);
+            std::cout << "}}" << std::endl;
+        } break;
+        default:
+            std::cout << field->name() << ": (unknown type)" << std::endl;
+            break;
+        }
+    }
+
+    std::cout << "]" << std::endl;
+}
+
+void set_repeated_value(const reflect::RepeatedField& field, reflect::Object obj) {
+    if (!field->is_array()) return;
+    switch (field->type()) {
+    case reflect::TypeEnum::CPPTYPE_BOOL:
+        field->add(obj, true);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT8:
+        field->add(obj, 'A');
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT8:
+        field->add(obj, 0x7f);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT16:
+        field->add(obj, 12345);
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT16:
+        field->add(obj, -12345);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT32:
+        field->add(obj, 123);
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT32:
+        field->add(obj, -123);
+        break;
+    case reflect::TypeEnum::CPPTYPE_INT64:
+        field->add(obj, 1234567890123LL);
+        break;
+    case reflect::TypeEnum::CPPTYPE_UINT64:
+        field->add(obj, 1234567890123ULL);
+        break;
+    case reflect::TypeEnum::CPPTYPE_LONG:
+        field->add(obj, 100000L);
+        break;
+    case reflect::TypeEnum::CPPTYPE_ULONG:
+        field->add(obj, -100000L);
+        break;
+    case reflect::TypeEnum::CPPTYPE_FLOAT:
+        field->add(obj, 3.14f);
+        break;
+    case reflect::TypeEnum::CPPTYPE_DOUBLE:
+        field->add(obj, 2.71828);
+        break;
+    case reflect::TypeEnum::CPPTYPE_STRING:
+        field->add(obj, "Hello, World!");
+        break;
+    case reflect::TypeEnum::CPPTYPE_OBJECT: {
+        const char* name = reflect::TypeIdInfo::GetInstance().get_type_name(field->type_id());
+        if (name == nullptr) throw std::runtime_error("unknown type");
+        auto& type = reflect::TypeInfo().GetInstance().load(name);
+        auto& sub_obj = type->create();
+        field_loop(type, sub_obj, nullptr, set_value);
+        field->add(obj, sub_obj);
+        field->add(obj, sub_obj);
+    } break;
+    default:
+        break;
+    }
+}
+
+void field_loop(const reflect::Type& type,
+                reflect::Object obj,
+                void (*print_value)(const reflect::RepeatedField& field, reflect::ConstObject obj),
+                void (*set_value)(const reflect::RepeatedField& field, reflect::Object obj)) {
+    for (size_t i = 0; i < type->field_count(); ++i) {
+        const reflect::Field& field = type->field(i);
+        if (print_value)
+            print_value(static_cast<const reflect::RepeatedField&>(field), obj);
+        if (set_value)
+            set_value(static_cast<const reflect::RepeatedField&>(field), obj);
+    }
+}
+
+void test_repeated() {
+    auto& type_A = reflect::TypeInfo().GetInstance().regist<A>("A");
+    type_A->field("a", &A::a)
+        .field("b", &A::b)
+        .field("c", &A::c)
+        .field("d", &A::d)
+        .field("e", &A::e)
+        .field("f", &A::f)
+        .field("g", &A::g);
+
+    auto& type_B = reflect::TypeInfo().GetInstance().regist<B>("B");
+    type_B->field("a", &B::a);
+
+    auto& type_C = reflect::TypeInfo().GetInstance().regist<C>("C");
+    type_C->field("a", &C::a)
+        .field("b", &C::b)
+        .field("c", &C::c)
+        .field("d", &C::d)
+        .field("e", &C::e)
+        .field("f", &C::f);
+
+    auto obj = type_C->create();
+    std::cout << "Type name: " << type_C->name() << std::endl;
+    std::cout << "Field count: " << type_C->field_count() << std::endl;
+    std::cout << "before: {" << std::endl;
+    field_loop(type_C, obj, print_repeated_value, set_repeated_value);
+    std::cout << "}" << std::endl;
+    std::cout << "after: {" << std::endl;
+    field_loop(type_C, obj, print_repeated_value, nullptr);
+    std::cout << "}" << std::endl;
+}
+
 int main(int argc, char** argv) {
     if (argc > 1) {
         std::string arg = argv[1];
@@ -255,6 +433,9 @@ int main(int argc, char** argv) {
                 std::string arg1 = argv[2];
                 if (arg1 == "object") {
                     test_object();
+                    return 0;
+                } else if (arg1 == "repeated") {
+                    test_repeated();
                     return 0;
                 }
             }
@@ -268,6 +449,6 @@ int main(int argc, char** argv) {
             return 0;
         }
     }
-    std::cout << "Usage: " << argv[0] << " (field [object] | type | manager)" << std::endl;
+    std::cout << "Usage: " << argv[0] << " (field [object|repeated] | type | manager)" << std::endl;
     return 0;
 }
