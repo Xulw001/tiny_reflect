@@ -12,6 +12,7 @@
 #define TYPE_INFO_H
 
 #include <unordered_map>
+#include <cstring>
 
 #include "type.h"
 namespace reflect {

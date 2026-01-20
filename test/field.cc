@@ -370,7 +370,7 @@ void set_repeated_value(const reflect::RepeatedField& field, reflect::Object obj
         const char* name = reflect::TypeIdInfo::GetInstance().get_type_name(field->type_id());
         if (name == nullptr) throw std::runtime_error("unknown type");
         auto& type = reflect::TypeInfo().GetInstance().load(name);
-        auto& sub_obj = type->create();
+        auto sub_obj = type->create();
         field_loop(type, sub_obj, nullptr, set_value);
         field->add(obj, sub_obj);
         field->add(obj, sub_obj);
