@@ -2,8 +2,8 @@
  * @file bool.h
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This file defines the FieldBase template specialization for repeated boolean fields.
- * @version 0.1
- * @date 2026-01-17
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -45,8 +45,8 @@ struct FieldBase<C, std::vector<bool>> : public RepeatedFieldInternal {
      * @param i The index of the element to get.
      * @return bool The boolean value at the specified index.
      */
-    virtual bool getBool(ConstObject obj, size_t i) const {
-        return (static_cast<const C&>(obj).*ptr_)[i];
+    virtual Boolean getBool(ConstObject obj, size_t i) const {
+        return Boolean((static_cast<const C&>(obj).*ptr_)[i]);
     }
 
     /**
@@ -55,8 +55,8 @@ struct FieldBase<C, std::vector<bool>> : public RepeatedFieldInternal {
      * @param obj The object to which the boolean value is to be added.
      * @param v The boolean value to add.
      */
-    virtual void addBool(Object obj, bool v) const {
-        (static_cast<C&>(obj).*ptr_).push_back(v);
+    virtual void addBool(Object obj, const Boolean& v) const {
+        (static_cast<C&>(obj).*ptr_).push_back(v.get());
     }
 
     /**
@@ -66,8 +66,8 @@ struct FieldBase<C, std::vector<bool>> : public RepeatedFieldInternal {
      * @param i The index of the element to set.
      * @param v The boolean value to set.
      */
-    virtual void setBool(Object obj, size_t i, bool v) const {
-        (static_cast<C&>(obj).*ptr_)[i] = v;
+    virtual void setBool(Object obj, size_t i, const Boolean& v) const {
+        (static_cast<C&>(obj).*ptr_)[i] = v.get();
     }
 
    private:

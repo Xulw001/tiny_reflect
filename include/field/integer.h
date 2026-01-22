@@ -5,8 +5,8 @@
  * @tparam C The class type that contains the integral member.
  * @tparam T The integral type of the member.
  *
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -40,7 +40,9 @@ struct FieldBase<C, T, typename std::enable_if<std::is_integral<T>::value>::type
      * @param obj The object from which to retrieve the integer value.
      * @return The integer value of the member.
      */
-    virtual Integer getInteger(ConstObject obj) const { return static_cast<const C&>(obj).*ptr_; }
+    virtual Integer getInteger(ConstObject obj) const {
+        return Integer(static_cast<const C&>(obj).*ptr_);
+    }
 
     /**
      * @brief Sets the integer value of the member in the given object.
@@ -48,7 +50,7 @@ struct FieldBase<C, T, typename std::enable_if<std::is_integral<T>::value>::type
      * @param obj The object in which to set the integer value.
      * @param v The integer value to set.
      */
-    virtual void setInteger(Object obj, Integer v) const {
+    virtual void setInteger(Object obj, const Integer& v) const {
         static_cast<C&>(obj).*ptr_ = v.get<T>();
     }
 

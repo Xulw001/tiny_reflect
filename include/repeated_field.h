@@ -3,8 +3,8 @@
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This file contains the definition of the RepeatedFieldInternal class, which
  *        represents a repeated field in a reflective object.
- * @version 0.1
- * @date 2026-01-17
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -48,7 +48,7 @@ struct RepeatedFieldInternal : public FieldInternal {
     template <typename T>
     typename std::enable_if<std::is_same<T, bool>::value, bool>::type get(ConstObject obj,
                                                                           size_t i) const {
-        return getBool(obj, i);
+        return getBool(obj, i).get();
     }
 
     /**
@@ -64,7 +64,7 @@ struct RepeatedFieldInternal : public FieldInternal {
     template <typename T>
     typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type get(
         ConstObject obj, size_t i) const {
-        return getText(obj, i);
+        return getText(obj, i).get();
     }
 
     /**
@@ -121,7 +121,7 @@ struct RepeatedFieldInternal : public FieldInternal {
      * @param obj The object to which the value is to be added.
      * @param v The boolean value to be added to the object's repeated field.
      */
-    void add(Object obj, bool v) const { addBool(obj, v); }
+    void add(Object obj, bool v) const { addBool(obj, Boolean(v)); }
 
     /**
      * @brief Adds a string value to the given object's repeated field.
@@ -132,8 +132,8 @@ struct RepeatedFieldInternal : public FieldInternal {
      * @param obj The object to which the value is to be added.
      * @param v The string value to be added to the object's repeated field.
      */
-    void add(Object obj, const char* v) const { addText(obj, v); }
-    void add(Object obj, const std::string& v) const { addText(obj, v); }
+    void add(Object obj, const char* v) const { addText(obj, Text(v)); }
+    void add(Object obj, const std::string& v) const { addText(obj, Text(v)); }
 
     /**
      * @brief Sets a boolean value in the given object's repeated field at the given index.
@@ -145,7 +145,7 @@ struct RepeatedFieldInternal : public FieldInternal {
      * @param i The index of the field value to be set.
      * @param v The boolean value to be set in the object's repeated field.
      */
-    void set(Object obj, size_t i, bool v) const { setBool(obj, i, v); }
+    void set(Object obj, size_t i, bool v) const { setBool(obj, i, Boolean(v)); }
 
     /**
      * @brief Sets a string value in the given object's repeated field at the given index.
@@ -157,8 +157,8 @@ struct RepeatedFieldInternal : public FieldInternal {
      * @param i The index of the field value to be set.
      * @param v The string value to be set in the object's repeated field.
      */
-    void set(Object obj, size_t i, const char* v) const { setText(obj, i, v); }
-    void set(Object obj, size_t i, const std::string& v) const { setText(obj, i, v); }
+    void set(Object obj, size_t i, const char* v) const { setText(obj, i, Text(v)); }
+    void set(Object obj, size_t i, const std::string& v) const { setText(obj, i, Text(v)); }
 
     /**
      * @brief Adds a value of type T to the given object at the end of its corresponding field.
@@ -172,7 +172,7 @@ struct RepeatedFieldInternal : public FieldInternal {
     template <typename T,
               typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
     void add(Object obj, T v) const {
-        addInteger(obj, v);
+        addInteger(obj, Integer(v));
     }
 
     /**
@@ -187,7 +187,7 @@ struct RepeatedFieldInternal : public FieldInternal {
     template <typename T,
               typename std::enable_if<std::is_floating_point<T>::value, int>::type = 1>
     void add(Object obj, T v) const {
-        addDecimal(obj, v);
+        addDecimal(obj, Decimal(v));
     }
 
     /**
@@ -203,7 +203,7 @@ struct RepeatedFieldInternal : public FieldInternal {
     template <typename T,
               typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
     void set(Object obj, size_t i, T v) const {
-        setInteger(obj, i, v);
+        setInteger(obj, i, Integer(v));
     }
 
     /**
@@ -219,7 +219,7 @@ struct RepeatedFieldInternal : public FieldInternal {
     template <typename T,
               typename std::enable_if<std::is_floating_point<T>::value, int>::type = 1>
     void set(Object obj, size_t i, T v) const {
-        setDecimal(obj, i, v);
+        setDecimal(obj, i, Decimal(v));
     }
 
     /**
@@ -244,20 +244,20 @@ struct RepeatedFieldInternal : public FieldInternal {
     virtual void set(Object obj, size_t i, ConstObject o) const { ; }
 
    protected:
-    virtual void setBool(Object obj, size_t i, bool v) const { ; }
-    virtual void setInteger(Object obj, size_t i, Integer v) const { ; }
-    virtual void setText(Object obj, size_t i, const std::string& v) const { ; }
-    virtual void setDecimal(Object obj, size_t i, Decimal v) const { ; }
+    virtual void setBool(Object obj, size_t i, const Boolean& v) const { ; }
+    virtual void setInteger(Object obj, size_t i, const Integer& v) const { ; }
+    virtual void setText(Object obj, size_t i, const Text& v) const { ; }
+    virtual void setDecimal(Object obj, size_t i, const Decimal& v) const { ; }
 
-    virtual void addBool(Object obj, bool v) const { ; }
-    virtual void addInteger(Object obj, Integer v) const { ; }
-    virtual void addText(Object obj, const std::string& v) const { ; }
-    virtual void addDecimal(Object obj, Decimal v) const { ; }
+    virtual void addBool(Object obj, const Boolean& v) const { ; }
+    virtual void addInteger(Object obj, const Integer& v) const { ; }
+    virtual void addText(Object obj, const Text& v) const { ; }
+    virtual void addDecimal(Object obj, const Decimal& v) const { ; }
 
-    virtual bool getBool(ConstObject obj, size_t i) const { return true; }
-    virtual Integer getInteger(ConstObject obj, size_t i) const { return 0; }
-    virtual std::string getText(ConstObject obj, size_t i) const { return ""; }
-    virtual Decimal getDecimal(ConstObject obj, size_t i) const { return 0.0f; };
+    virtual Boolean getBool(ConstObject obj, size_t i) const { return Boolean(true); }
+    virtual Integer getInteger(ConstObject obj, size_t i) const { return Integer(0); }
+    virtual Text getText(ConstObject obj, size_t i) const { return Text(""); }
+    virtual Decimal getDecimal(ConstObject obj, size_t i) const { return Decimal(0.0f); };
 };
 
 struct RepeatedField : public Field {

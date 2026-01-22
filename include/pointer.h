@@ -2,8 +2,8 @@
  * @file pointer.h
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This file defines the Pointer class, which manages a unique pointer to an ObjectInternal instance.
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -28,7 +28,7 @@ struct Pointer {
      *
      * @param ptr A pointer to an ObjectInternal object.
      */
-    Pointer(ObjectInternal* ptr) : ptr_(ptr) { ; }
+    explicit Pointer(ObjectInternal* ptr) : ptr_(ptr) { ; }
 
     /**
      * @brief Converts the Pointer to a reference of ObjectInternal.

@@ -2,8 +2,8 @@
  * @file integer.h
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This file defines the FieldBase template specialization for repeated integral fields.
- * @version 0.1
- * @date 2026-01-17
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -47,7 +47,7 @@ struct FieldBase<C, std::vector<T>, typename std::enable_if<std::is_integral<T>:
      * @return The integer value at the specified index in the given object.
      */
     virtual Integer getInteger(ConstObject obj, size_t i) const {
-        return (static_cast<const C&>(obj).*ptr_)[i];
+        return Integer((static_cast<const C&>(obj).*ptr_)[i]);
     }
 
     /**
@@ -56,7 +56,7 @@ struct FieldBase<C, std::vector<T>, typename std::enable_if<std::is_integral<T>:
      * @param obj The object to which the integer value is to be added.
      * @param v The integer value to be added to the repeated field.
      */
-    virtual void addInteger(Object obj, Integer v) const {
+    virtual void addInteger(Object obj, const Integer& v) const {
         (static_cast<C&>(obj).*ptr_).push_back(v.get<T>());
     }
 
@@ -67,7 +67,7 @@ struct FieldBase<C, std::vector<T>, typename std::enable_if<std::is_integral<T>:
      * @param i The index of the element to set.
      * @param v The integer value to set.
      */
-    virtual void setInteger(Object obj, size_t i, Integer v) const {
+    virtual void setInteger(Object obj, size_t i, const Integer& v) const {
         (static_cast<C&>(obj).*ptr_)[i] = v.get<T>();
     }
 

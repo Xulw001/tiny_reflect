@@ -5,8 +5,8 @@
  *
  * @tparam C The class type that contains the string member variable.
  *
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -39,7 +39,9 @@ struct FieldBase<C, std::string> : public FieldInternal {
      * @param obj The object from which to retrieve the string value.
      * @return The string value of the member variable.
      */
-    virtual std::string getText(ConstObject obj) const { return static_cast<const C&>(obj).*ptr_; }
+    virtual Text getText(ConstObject obj) const {
+        return Text(static_cast<const C&>(obj).*ptr_);
+    }
 
     /**
      * @brief Sets the string value of the specified object.
@@ -47,7 +49,9 @@ struct FieldBase<C, std::string> : public FieldInternal {
      * @param obj The object in which to set the string value.
      * @param v The new string value to set.
      */
-    virtual void setText(Object obj, const std::string& v) const { static_cast<C&>(obj).*ptr_ = v; }
+    virtual void setText(Object obj, const Text& v) const {
+        static_cast<C&>(obj).*ptr_ = v.get();
+    }
 
    private:
     std::string C::* ptr_;  ///< Pointer to the string member variable.

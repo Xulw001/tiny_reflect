@@ -2,8 +2,8 @@
  * @file text.h
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This file defines the FieldBase template specialization for repeated string fields.
- * @version 0.1
- * @date 2026-01-17
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -45,8 +45,8 @@ struct FieldBase<C, std::vector<std::string>> : public RepeatedFieldInternal {
      * @param i The index of the element to retrieve.
      * @return The string value at the specified index.
      */
-    virtual std::string getText(ConstObject obj, size_t i) const {
-        return (static_cast<const C&>(obj).*ptr_)[i];
+    virtual Text getText(ConstObject obj, size_t i) const {
+        return Text((static_cast<const C&>(obj).*ptr_)[i]);
     }
 
     /**
@@ -55,8 +55,8 @@ struct FieldBase<C, std::vector<std::string>> : public RepeatedFieldInternal {
      * @param obj The object to which the string value is to be added.
      * @param v The string value to add.
      */
-    virtual void addText(Object obj, const std::string& v) const {
-        (static_cast<C&>(obj).*ptr_).push_back(v);
+    virtual void addText(Object obj, const Text& v) const {
+        (static_cast<C&>(obj).*ptr_).push_back(v.get());
     }
 
     /**
@@ -66,8 +66,8 @@ struct FieldBase<C, std::vector<std::string>> : public RepeatedFieldInternal {
      * @param i The index of the element to set.
      * @param v The string value to set.
      */
-    virtual void setText(Object obj, size_t i, const std::string& v) const {
-        (static_cast<C&>(obj).*ptr_)[i] = v;
+    virtual void setText(Object obj, size_t i, const Text& v) const {
+        (static_cast<C&>(obj).*ptr_)[i] = v.get();
     }
 
    private:

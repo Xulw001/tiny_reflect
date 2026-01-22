@@ -4,8 +4,8 @@
  * @brief This file defines the FieldBase template specialization for boolean fields.
  * @tparam C The class type that contains the boolean member variable.
  *
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -38,7 +38,9 @@ struct FieldBase<C, bool> : public FieldInternal {
      * @param obj The object from which to get the boolean value.
      * @return bool The boolean value of the member variable.
      */
-    virtual bool getBool(ConstObject obj) const { return static_cast<const C&>(obj).*ptr_; }
+    virtual Boolean getBool(ConstObject obj) const {
+        return Boolean(static_cast<const C&>(obj).*ptr_);
+    }
 
     /**
      * @brief Set the boolean value of the object.
@@ -46,7 +48,9 @@ struct FieldBase<C, bool> : public FieldInternal {
      * @param obj The object in which to set the boolean value.
      * @param v The boolean value to set.
      */
-    virtual void setBool(Object obj, bool v) const { static_cast<C&>(obj).*ptr_ = v; }
+    virtual void setBool(Object obj, const Boolean& v) const {
+        static_cast<C&>(obj).*ptr_ = v.get();
+    }
 
    private:
     bool C::* ptr_;  // Pointer to the boolean member variable

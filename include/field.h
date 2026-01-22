@@ -5,8 +5,8 @@
  *        reflection of various data types in a generic manner. It provides methods to get
  *        and set values of different types, including boolean, string, integral, and
  *        floating-point types.
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -14,8 +14,10 @@
 #define FIELD_H
 #include <memory>
 
+#include "type/boolean.h"
 #include "type/decimal.h"
 #include "type/integer.h"
+#include "type/text.h"
 #include "type_traits.h"
 
 namespace reflect {
@@ -67,13 +69,13 @@ struct FieldInternal : public ObjectInternal {
     // Template methods for getting values of different types
     template <typename T>
     typename std::enable_if<std::is_same<T, bool>::value, bool>::type get(ConstObject obj) const {
-        return getBool(obj);
+        return getBool(obj).get();
     }
 
     template <typename T>
     typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type get(
         ConstObject obj) const {
-        return getText(obj);
+        return getText(obj).get();
     }
 
     template <typename T>
@@ -104,9 +106,9 @@ struct FieldInternal : public ObjectInternal {
     virtual Object getObject(Object obj) const { return obj; };
 
     // Template methods for setting values of different types
-    void set(Object obj, bool v) const { setBool(obj, v); }
-    void set(Object obj, const char* v) const { setText(obj, v); }
-    void set(Object obj, const std::string& v) const { setText(obj, v); }
+    void set(Object obj, bool v) const { setBool(obj, Boolean(v)); }
+    void set(Object obj, const char* v) const { setText(obj, Text(v)); }
+    void set(Object obj, const std::string& v) const { setText(obj, Text(v)); }
 
     template <typename T, typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
     void set(Object obj, T v) const {
@@ -115,7 +117,7 @@ struct FieldInternal : public ObjectInternal {
 
     template <typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 1>
     void set(Object obj, T v) const {
-        setDecimal(obj, v);
+        setDecimal(obj, Decimal(v));
     }
 
     /**
@@ -128,16 +130,16 @@ struct FieldInternal : public ObjectInternal {
 
    protected:
     // Protected methods for getting values
-    virtual bool getBool(ConstObject obj) const { return true; }
-    virtual Integer getInteger(ConstObject obj) const { return 0; }
-    virtual std::string getText(ConstObject obj) const { return ""; }
-    virtual Decimal getDecimal(ConstObject obj) const { return 0.0f; };
+    virtual Boolean getBool(ConstObject obj) const { return Boolean(true); }
+    virtual Integer getInteger(ConstObject obj) const { return Integer(0); }
+    virtual Text getText(ConstObject obj) const { return Text(""); }
+    virtual Decimal getDecimal(ConstObject obj) const { return Decimal(0.0f); };
 
     // Protected methods for setting values
-    virtual void setBool(Object obj, bool v) const { ; }
-    virtual void setInteger(Object obj, Integer v) const { ; }
-    virtual void setText(Object obj, const std::string& v) const { ; }
-    virtual void setDecimal(Object obj, Decimal v) const { ; }
+    virtual void setBool(Object obj, const Boolean& v) const { ; }
+    virtual void setInteger(Object obj, const Integer& v) const { ; }
+    virtual void setText(Object obj, const Text& v) const { ; }
+    virtual void setDecimal(Object obj, const Decimal& v) const { ; }
 
    private:
     const char* name_;  ///< The name of the field.

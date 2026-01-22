@@ -2,8 +2,8 @@
  * @file decimal.h
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This file defines the FieldBase template specialization for repeated decimal fields.
- * @version 0.1
- * @date 2026-01-17
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -49,7 +49,7 @@ struct FieldBase<C, std::vector<T>, typename std::enable_if<std::is_floating_poi
      * @return Decimal The decimal value at the specified index.
      **/
     virtual Decimal getDecimal(ConstObject obj, size_t i) const {
-        return (static_cast<const C&>(obj).*ptr_)[i];
+        return Decimal((static_cast<const C&>(obj).*ptr_)[i]);
     }
 
     /**
@@ -58,7 +58,7 @@ struct FieldBase<C, std::vector<T>, typename std::enable_if<std::is_floating_poi
      * @param obj The object to which the decimal value is to be added.
      * @param v The decimal value to add.
      */
-    virtual void addDecimal(Object obj, Decimal v) const {
+    virtual void addDecimal(Object obj, const Decimal& v) const {
         (static_cast<C&>(obj).*ptr_).push_back(v.get<T>());
     }
 
@@ -69,7 +69,7 @@ struct FieldBase<C, std::vector<T>, typename std::enable_if<std::is_floating_poi
      * @param i The index of the element to set.
      * @param v The decimal value to set.
      */
-    virtual void setDecimal(Object obj, size_t i, Decimal v) const {
+    virtual void setDecimal(Object obj, size_t i, const Decimal& v) const {
         (static_cast<C&>(obj).*ptr_)[i] = v.get<T>();
     }
 

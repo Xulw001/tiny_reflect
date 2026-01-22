@@ -5,8 +5,8 @@
  * @tparam C The class type that contains the floating-point member.
  * @tparam T The floating-point type (e.g., float, double) of the member.
  *
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -40,7 +40,9 @@ struct FieldBase<C, T, typename std::enable_if<std::is_floating_point<T>::value>
      * @param obj The object from which to retrieve the decimal value.
      * @return Decimal The decimal value of the floating-point member.
      */
-    virtual Decimal getDecimal(ConstObject obj) const { return static_cast<const C&>(obj).*ptr_; }
+    virtual Decimal getDecimal(ConstObject obj) const {
+        return Decimal(static_cast<const C&>(obj).*ptr_);
+    }
 
     /**
      * @brief Sets the decimal value for the specified object.
@@ -48,7 +50,7 @@ struct FieldBase<C, T, typename std::enable_if<std::is_floating_point<T>::value>
      * @param obj The object to which the decimal value will be set.
      * @param v The decimal value to set.
      */
-    virtual void setDecimal(Object obj, Decimal v) const {
+    virtual void setDecimal(Object obj, const Decimal& v) const {
         static_cast<C&>(obj).*ptr_ = v.get<T>();
     }
 

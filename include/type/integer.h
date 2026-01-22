@@ -3,8 +3,8 @@
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This header file defines the Integer class, which provides methods for
  *        conversion and retrieval of the stored integer value in various formats.
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -55,7 +55,7 @@ struct Integer : public ObjectInternal {
      * @param val The integral value to be stored in the Integer object.
      */
     template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
-    Integer(T val) : is_unsigned_(std::is_unsigned<T>::value) {
+    explicit Integer(T val) : is_unsigned_(std::is_unsigned<T>::value) {
         if (is_unsigned_)
             ull = val;
         else

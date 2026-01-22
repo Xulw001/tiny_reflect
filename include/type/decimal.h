@@ -3,8 +3,8 @@
  * @author xulw (nevermore.xulw@hotmail.com)
  * @brief This header file defines the Decimal class, which provides methods for conversion
  *        and retrieval of the stored value.
- * @version 0.1
- * @date 2026-01-15
+ * @version 0.2
+ * @date 2026-01-22
  *
  * @copyright Copyright (c) 2026
  */
@@ -40,8 +40,8 @@ struct Decimal : public ObjectInternal {
      *
      * This constructor is enabled only for floating-point types.
      */
-    template <typename T, typename = typename std::enable_if<std::is_floating_point<T>::value>>
-    Decimal(const T& v) : d(v) {}
+    template <typename T, typename = typename std::enable_if<std::is_floating_point<T>::value>::type>
+    explicit Decimal(const T& v) : d(v) {}
 
     /**
      * @brief Converts the stored value to a float.
