@@ -1,11 +1,9 @@
 /**
  * @file type_id.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This header file defines a mechanism for generating unique type IDs
- *        for C++ types. It includes a base class for ID generation and a
- *        template struct to retrieve type IDs for specific types.
- * @version 0.1
- * @date 2026-01-15
+ * @brief Reflection system unique type ID generation (config/type-driven)
+ * @version 0.2
+ * @date 2026-02-21
  *
  * @copyright Copyright (c) 2026
  */
@@ -17,65 +15,86 @@
 #include "type_traits.h"
 
 namespace reflect {
+/**
+ * @struct DefaultConfig
+ * @brief Default configuration for type ID generation, starting from 0x0.
+ */
+struct DefaultConfig {
+    const static std::size_t CPPTYPE = 0x0;
+};
 
 /**
- * @brief Base class for generating unique type IDs.
- *
- * This class provides a static method to generate unique IDs for types
- * using an atomic counter. The IDs are generated starting from a predefined
- * maximum value (MAX_CPPTYPE).
+ * @struct CustomConfig
+ * @brief Custom configuration for type ID generation, starting from 0x10000.
  */
+struct CustomConfig {
+    const static std::size_t CPPTYPE = 0x10000;
+};
+
+/**
+ * @struct TypeIdBase
+ * @brief Thread-safe config-driven unique type ID generator base
+ * @details Generates unique type IDs via atomic counter starting at
+ *          Config::CPPTYPE
+ * @tparam Config Struct with CPPTYPE (starting value for ID counter)
+ * @note Thread-safe via std::atomic; IDs increment sequentially
+ */
+template <typename Config>
 struct TypeIdBase {
     /**
-     * @brief Generates a unique ID.
-     *
-     * @return size_t A unique ID for a type.
+     * @brief Generates a unique type ID (atomic increment)
+     * @return Unique type ID (size_t) incremented from Config::CPPTYPE
      */
     static size_t generate_id() {
-        static std::atomic<size_t> counter{MAX_CPPTYPE};
+        static std::atomic<size_t> counter{Config::CPPTYPE};
         return counter++;
     }
 };
 
 /**
- * @brief Template struct for obtaining a unique type ID for a given type T.
- *
- * This struct uses the TypeIdBase to generate a unique ID for the type T
- * when the get_type_id method is called for the first time.
+ * @struct TypeId
+ * @brief Type-specific unique ID generator (config-driven, thread-safe)
+ * @details Generates a fixed unique type ID for T via TypeIdBase<Config>;
+ *          initialized once (static const) and constant for program lifetime
+ * @tparam T Type to generate a unique ID for
+ * @note Thread-safe initialization via static const; single ID per T+Config
+ * combination (no duplicate IDs)
  */
-template <typename T>
+template <typename T, typename Config>
 struct TypeId {
     /**
-     * @brief Retrieves the unique type ID for type T.
-     *
-     * @return size_t The unique type ID for type T.
+     * @brief Gets fixed unique ID for T
+     * @return Fixed size_t ID for T, generated once via TypeIdBase<Config>
      */
     static size_t get_type_id() {
-        static const size_t id = TypeIdBase::generate_id();
+        static const size_t id = TypeIdBase<Config>::generate_id();
         return id;
     }
-
-   private:
 };
 
 /**
- * @brief Retrieves the type ID for a given type T.
- *
- * This function checks if T is derived from ObjectInternal. If it is,
- * it retrieves the type ID using TypeId<T>. Otherwise, it retrieves the
- * type ID from TypeTraits<T>.
- *
- * @tparam T The type for which to retrieve the ID.
- * @return size_t The type ID for type T.
+ * @typedef ConfigSelector
+ * @brief Config selector for type ID generation (object vs non-object)
+ * @details Uses selector_t to choose CustomConfig for object types and
+ *          DefaultConfig for non-objects
+ * @tparam T Target type to select config for(volatile qualifiers removed)
+ * @tparam U Unqualified type of T (std::remove_volatile<T>::type, default)
  */
-template <typename T>
+template <typename T, typename U = typename std::remove_volatile<T>::type>
+using ConfigSelector = selector_t<is_object<U>, CustomConfig, DefaultConfig>;
+
+/**
+ * @brief Gets fixed unique type ID for T (ConfigSelector-driven)
+ * @tparam T Non-reference type to get unique ID for (enabled via enable_if)
+ * @return Fixed unique size_t ID for T (from TypeId<T, ConfigSelector<T>>)
+ * @note Enabled only for non-reference types; volatile qualifiers are ignored
+ */
+template <typename T,
+          typename std::enable_if<!std::is_reference<T>::value, int>::type = 0>
 size_t get_type_id() {
-    if (std::is_base_of<ObjectInternal, T>::value) {
-        return TypeId<T>::get_type_id();
-    } else {
-        return TypeTraits<T>::value;
-    }
+    return TypeId<T, ConfigSelector<T>>::get_type_id();
 }
+
 }  // namespace reflect
 
 #endif

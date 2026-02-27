@@ -1,8 +1,7 @@
 /**
  * @file repeated_field.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This file contains the definition of the RepeatedFieldInternal class, which
- *        represents a repeated field in a reflective object.
+ * @brief Internal repeated field metadata & access utilities
  * @version 0.2
  * @date 2026-01-22
  *
@@ -15,254 +14,219 @@
 
 namespace reflect {
 /**
- * @brief The RepeatedFieldInternal class represents a repeated field in a reflective object.
- * It inherits from the FieldInternal class and provides additional functionality for
- * handling repeated fields.
+ * @struct RepeatedFieldInternal
+ * @brief Internal representation of a repeated (array) field
+ * @details Provides size/get/add/set operations for array fields
  */
 struct RepeatedFieldInternal : public FieldInternal {
    public:
-    explicit RepeatedFieldInternal(const char* name, TypeEnum type)
-        : FieldInternal(name, type, true) {};
-
     /**
-     * @brief Gets the number of elements in the repeated field.
-     *
-     * This function is a template specialization of the size function for repeated
-     * fields. It returns the number of elements in the repeated field.
-     *
-     * @param obj The object whose field size is to be retrieved.
-     * @return The number of elements in the repeated field.
+     * @brief Construct a new RepeatedFieldInternal object
+     * @param name Field name (non-null)
+     * @param type_id Field type ID
+     * @param object Whether the field is an object
      */
-    virtual size_t size(ConstObject obj) const = 0;
+    explicit RepeatedFieldInternal(const char* name, std::size_t type_id,
+                                   bool object)
+        : FieldInternal(name, type_id, true, object) {};
 
     /**
-     * @brief Gets the value of a boolean field at the given index.
-     *
-     * This function is a template specialization of the get function for boolean
-     * fields. It returns the value of the boolean field at the given index.
-     *
-     * @param obj The object whose field value is to be retrieved.
-     * @param i The index of the field value to be retrieved.
-     * @return The value of the boolean field at the given index.
+     * @brief Get array field size (pure virtual)
+     * @param obj Object to get field size from
+     * @return Array element count (std::size_t)
+     * @note Override in derived classes for actual size retrieval
+     */
+    virtual std::size_t size(Object obj) const = 0;
+
+    /**
+     * @brief Get array element by index
+     * @tparam T Type to get (decayed to U via std::decay)
+     * @param obj Object to get element from
+     * @param i Element index
+     * @return Reference to element (cast to T)
+     * @throws ReflectException If type does not match field type
+     */
+    template <typename T, typename U = typename std::decay<T>::type>
+    T& get(Object obj, size_t i) const {
+        if (type_id() != get_type_id<U>()) {
+            throw ReflectException("type mismatch!");
+        }
+        return GetField(obj, i).cast<U>();
+    }
+
+    /**
+     * @brief Add element to array (lvalue reference)
+     * @tparam T Type of the value to add
+     * @param obj Object to add element to
+     * @param value Lvalue reference to value
+     * @throws ReflectException If type does not match field type
      */
     template <typename T>
-    typename std::enable_if<std::is_same<T, bool>::value, bool>::type get(ConstObject obj,
-                                                                          size_t i) const {
-        return getBool(obj, i).get();
+    void add(Object obj, T& value) const {
+        if (type_id() != get_type_id<T>()) {
+            throw ReflectException("type mismatch!");
+        }
+        AddField(obj, Reference(value));
     }
 
     /**
-     * @brief Gets the value of a string field at the given index.
-     *
-     * This function is a template specialization of the get function for string
-     * fields. It returns the value of the string field at the given index.
-     *
-     * @param obj The object whose field value is to be retrieved.
-     * @param i The index of the field value to be retrieved.
-     * @return The value of the string field at the given index.
+     * @brief Add element to array (rvalue reference)
+     * @tparam T Type of the value to add
+     * @param obj Object to add element to
+     * @param value Rvalue reference to value
+     * @throws ReflectException If type does not match field type
      */
     template <typename T>
-    typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type get(
-        ConstObject obj, size_t i) const {
-        return getText(obj, i).get();
+    void add(Object obj, T&& value) const {
+        if (type_id() != get_type_id<T>()) {
+            throw ReflectException("type mismatch!");
+        }
+        AddField(obj, Value(in_place_type_t<T>{}, value));
     }
 
     /**
-     * @brief Gets the value of an integral field at the given index.
-     *
-     * This function is a template specialization of the get function for integral
-     * fields. It returns the value of the integral field at the given index.
-     *
-     * @param obj The object whose field value is to be retrieved.
-     * @param i The index of the field value to be retrieved.
-     * @return The value of the integral field at the given index.
+     * @brief Set array element by index (lvalue reference)
+     * @tparam T Type of the value to set
+     * @param obj Object to set element on
+     * @param i Element index
+     * @param value Lvalue reference to value
+     * @throws ReflectException If type does not match field type
      */
     template <typename T>
-    typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, bool>::value, T>::type
-    get(ConstObject obj, size_t i) const {
-        return getInteger(obj, i).get<T>();
+    void set(Object obj, size_t i, T& value) const {
+        if (type_id() != get_type_id<T>()) {
+            throw ReflectException("type mismatch!");
+        }
+        SetField(obj, i, Reference(value));
     }
 
     /**
-     * @brief Gets the value of a floating-point field at the given index.
-     *
-     * This function is a template specialization of the get function for floating-point
-     * fields. It returns the value of the floating-point field at the given index.
-     *
-     * @param obj The object whose field value is to be retrieved.
-     * @param i The index of the field value to be retrieved.
-     * @return The value of the floating-point field at the given index.
+     * @brief Set array element by index (rvalue reference)
+     * @tparam T Type of the value to set
+     * @param obj Object to set element on
+     * @param i Element index
+     * @param value Rvalue reference to value
+     * @throws ReflectException If type does not match field type
      */
     template <typename T>
-    typename std::enable_if<std::is_floating_point<T>::value, T>::type get(ConstObject obj,
-                                                                           size_t i) const {
-        return getDecimal(obj, i).get<T>();
+    void set(Object obj, size_t i, T&& value) const {
+        if (type_id() != get_type_id<T>()) {
+            throw ReflectException("type mismatch!");
+        }
+        SetField(obj, i, Value(in_place_type_t<T>{}, value));
     }
 
     /**
-     * @brief Gets the object at the given index from the given object's repeated field.
-     *
-     * This function is a template specialization of the getObject function for repeated
-     * fields. It returns the object at the given index from the given object's repeated
-     * field.
-     *
-     * @param obj The object whose field object is to be retrieved.
-     * @param i The index of the field object to be retrieved.
-     * @return The object at the given index from the given object's repeated field.
+     * @brief Get object from repeated field element
+     * @param obj Object to get sub-object from
+     * @param i Element index
+     * @return Object at specified index
+     * @note Override in derived classes for actual object retrieval
+     * @throws ReflectException If field is not an object
      */
-    virtual ConstObject getObject(ConstObject obj, size_t i) const { return obj; };
-
-    /**
-     * @brief Adds a boolean value to the given object's repeated field.
-     *
-     * This template specialization of the add function is used for boolean types. It
-     * adds the boolean value to the given object's repeated field.
-     *
-     * @param obj The object to which the value is to be added.
-     * @param v The boolean value to be added to the object's repeated field.
-     */
-    void add(Object obj, bool v) const { addBool(obj, Boolean(v)); }
-
-    /**
-     * @brief Adds a string value to the given object's repeated field.
-     *
-     * This template specialization of the add function is used for string types. It
-     * adds the string value to the given object's repeated field.
-     *
-     * @param obj The object to which the value is to be added.
-     * @param v The string value to be added to the object's repeated field.
-     */
-    void add(Object obj, const char* v) const { addText(obj, Text(v)); }
-    void add(Object obj, const std::string& v) const { addText(obj, Text(v)); }
-
-    /**
-     * @brief Sets a boolean value in the given object's repeated field at the given index.
-     *
-     * This template specialization of the set function is used for boolean types. It
-     * sets the boolean value in the given object's repeated field at the given index.
-     *
-     * @param obj The object whose field value is to be set.
-     * @param i The index of the field value to be set.
-     * @param v The boolean value to be set in the object's repeated field.
-     */
-    void set(Object obj, size_t i, bool v) const { setBool(obj, i, Boolean(v)); }
-
-    /**
-     * @brief Sets a string value in the given object's repeated field at the given index.
-     *
-     * This template specialization of the set function is used for string types. It
-     * sets the string value in the given object's repeated field at the given index.
-     *
-     * @param obj The object whose field value is to be set.
-     * @param i The index of the field value to be set.
-     * @param v The string value to be set in the object's repeated field.
-     */
-    void set(Object obj, size_t i, const char* v) const { setText(obj, i, Text(v)); }
-    void set(Object obj, size_t i, const std::string& v) const { setText(obj, i, Text(v)); }
-
-    /**
-     * @brief Adds a value of type T to the given object at the end of its corresponding field.
-     *
-     * This template specialization of the add function is used for integral types. It
-     * adds the value of type T to the given object at the end of its corresponding field.
-     *
-     * @param obj The object to which the value is to be added.
-     * @param v The value to be added to the object's field.
-     */
-    template <typename T,
-              typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
-    void add(Object obj, T v) const {
-        addInteger(obj, Integer(v));
+    virtual Object GetObject(Object obj, size_t i) const {
+        if (!is_object()) {
+            throw ReflectException::format("Field[%s] is not an object",
+                                           name());
+        }
+        return obj;
     }
 
     /**
-     * @brief Adds a value of type T to the given object at the end of its floating-point field.
-     *
-     * This template specialization of the add function is used for floating-point types. It
-     * adds the value of type T to the given object at the end of its floating-point field.
-     *
-     * @param obj The object to which the value is to be added.
-     * @param v The value to be added to the object's field.
+     * @brief Set object to repeated field element
+     * @param obj Object to set element on
+     * @param i Element index
+     * @param sub Sub-object to set
+     * @note Override in derived classes for actual object assignment
+     * @throws ReflectException If field is not an object
      */
-    template <typename T,
-              typename std::enable_if<std::is_floating_point<T>::value, int>::type = 1>
-    void add(Object obj, T v) const {
-        addDecimal(obj, Decimal(v));
+    virtual void SetObject(Object obj, size_t i, Object sub) const {
+        if (!is_object()) {
+            throw ReflectException::format("Field[%s] is not an object",
+                                           name());
+        }
     }
 
     /**
-     * @brief Sets the value of an integral field at the given index.
-     *
-     * This template specialization of the set function is used for integral types. It
-     * sets the value of the integral field at the given index.
-     *
-     * @param obj The object whose field value is to be set.
-     * @param i The index of the field value to be set.
-     * @param v The value to be set for the field at the given index.
+     * @brief Add object to repeated field
+     * @param obj Object to add element to
+     * @param sub Sub-object to add
+     * @throws ReflectException If field is not an object
+     * @note Override in derived classes for actual object addition
      */
-    template <typename T,
-              typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
-    void set(Object obj, size_t i, T v) const {
-        setInteger(obj, i, Integer(v));
+    virtual void AddObject(Object obj, Object sub) const {
+        if (!is_object()) {
+            throw ReflectException::format("Field[%s] is not an object",
+                                           name());
+        }
     }
-
-    /**
-     * @brief Sets the value of a floating-point field at the given index.
-     *
-     * This template specialization of the set function is used for floating-point types. It
-     * sets the value of the floating-point field at the given index.
-     *
-     * @param obj The object whose field value is to be set.
-     * @param i The index of the field value to be set.
-     * @param v The value to be set for the field at the given index.
-     */
-    template <typename T,
-              typename std::enable_if<std::is_floating_point<T>::value, int>::type = 1>
-    void set(Object obj, size_t i, T v) const {
-        setDecimal(obj, i, Decimal(v));
-    }
-
-    /**
-     * @brief Adds the value of the given ConstObject to the given object at the end of its field.
-     *
-     * This function adds the value of the given ConstObject to the given object at the end of its field.
-     *
-     * @param obj The object to which the value is to be added.
-     * @param o The value to be added to the object's field.
-     */
-    virtual void add(Object obj, ConstObject o) const { ; }
-
-    /**
-     * @brief Sets the value of the given ConstObject at the given index in the given object's field.
-     *
-     * This function sets the value of the given ConstObject at the given index in the given object's field.
-     *
-     * @param obj The object whose field value is to be set.
-     * @param i The index of the field value to be set.
-     * @param o The value to be set for the field at the given index.
-     */
-    virtual void set(Object obj, size_t i, ConstObject o) const { ; }
 
    protected:
-    virtual void setBool(Object obj, size_t i, const Boolean& v) const { ; }
-    virtual void setInteger(Object obj, size_t i, const Integer& v) const { ; }
-    virtual void setText(Object obj, size_t i, const Text& v) const { ; }
-    virtual void setDecimal(Object obj, size_t i, const Decimal& v) const { ; }
+    /**
+     * @brief Get array element as Reference
+     * @param obj Object to get element from
+     * @param i Element index
+     * @return Reference to element
+     * @note Override in derived classes for actual field value retrieval
+     */
+    virtual Reference GetField(Object obj, size_t i) const {
+        return Reference(obj);
+    };
 
-    virtual void addBool(Object obj, const Boolean& v) const { ; }
-    virtual void addInteger(Object obj, const Integer& v) const { ; }
-    virtual void addText(Object obj, const Text& v) const { ; }
-    virtual void addDecimal(Object obj, const Decimal& v) const { ; }
+    /**
+     * @brief Set array element with Reference
+     * @param obj Object to set element on
+     * @param i Element index
+     * @param ref Reference to value to set
+     * @note Override in derived classes for actual element assignment
+     */
+    virtual void SetField(Object obj, size_t i, Reference ref) const { ; }
 
-    virtual Boolean getBool(ConstObject obj, size_t i) const { return Boolean(true); }
-    virtual Integer getInteger(ConstObject obj, size_t i) const { return Integer(0); }
-    virtual Text getText(ConstObject obj, size_t i) const { return Text(""); }
-    virtual Decimal getDecimal(ConstObject obj, size_t i) const { return Decimal(0.0f); };
+    /**
+     * @brief Set array element with Value
+     * @param obj Object to set element on
+     * @param i Element index
+     * @param val Value to set
+     * @note Override in derived classes for actual element assignment
+     */
+    virtual void SetField(Object obj, size_t i, Value val) const { ; }
+
+    /**
+     * @brief Add element with Reference
+     * @param obj Object to add element to
+     * @param ref Reference to value to add
+     * @note Override in derived classes for actual element addition
+     */
+    virtual void AddField(Object obj, Reference ref) const { ; }
+
+    /**
+     * @brief Add element with Value
+     * @param obj Object to add element to
+     * @param val Value to add
+     * @note Override in derived classes for actual element addition
+     */
+    virtual void AddField(Object obj, Value val) const { ; }
 };
 
+/**
+ * @struct RepeatedField
+ * @brief Wrapper for RepeatedFieldInternal (inherits Field)
+ * @details Provides operator-> to cast to RepeatedFieldInternal*
+ */
 struct RepeatedField : public Field {
    public:
-    RepeatedFieldInternal* operator->() { return static_cast<RepeatedFieldInternal*>(this->get()); }
+    /**
+     * @brief GetRepeatedFieldInternal pointer
+     * @return Pointer to internal repeated field
+     */
+    RepeatedFieldInternal* operator->() {
+        return static_cast<RepeatedFieldInternal*>(this->get());
+    }
+
+    /**
+     * @brief Get const RepeatedFieldInternal pointer
+     * @return Const pointer to internal repeated field
+     */
     const RepeatedFieldInternal* operator->() const {
         return static_cast<const RepeatedFieldInternal*>(this->get());
     }

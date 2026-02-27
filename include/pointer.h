@@ -1,7 +1,7 @@
 /**
  * @file pointer.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This file defines the Pointer class, which manages a unique pointer to an ObjectInternal instance.
+ * @brief Smart pointer for ObjectInternal
  * @version 0.2
  * @date 2026-01-22
  *
@@ -9,41 +9,48 @@
  */
 #ifndef POINTER_H
 #define POINTER_H
+
 #include <memory>
 
 #include "object.h"
 
 namespace reflect {
 /**
- * @brief A class that manages a pointer to an ObjectInternal instance.
- *
- * The Pointer class encapsulates a unique pointer to an ObjectInternal object,
- * providing a way to manage the object's lifetime automatically. It allows
- * conversion to a reference of ObjectInternal for easy access to the underlying object.
+ * @struct Pointer
+ * @brief Smart pointer wrapper for ObjectInternal (unique ownership)
+ * @details Provides RAII-managed access to ObjectInternal instances,with
+            implicit conversion to Object for compatibility with
+            reflection system APIs.
  */
 struct Pointer {
+    template <typename T>
+    friend struct Constructible;
+
    public:
     /**
-     * @brief Constructs a Pointer with the given ObjectInternal pointer.
-     *
-     * @param ptr A pointer to an ObjectInternal object.
-     */
-    explicit Pointer(ObjectInternal* ptr) : ptr_(ptr) { ; }
-
-    /**
-     * @brief Converts the Pointer to a reference of ObjectInternal.
-     *
-     * This operator allows the Pointer to be used as if it were a reference
-     * to the underlying ObjectInternal object.
-     *
-     * @return A reference to the ObjectInternal object.
+     * @brief Implicit conversion to mutable ObjectInternal reference
+     * @return Reference to the managed ObjectInternal instance
      */
     operator ObjectInternal&() { return *ptr_.get(); }
 
    private:
-    std::unique_ptr<ObjectInternal> ptr_;  ///< Unique pointer to manage ObjectInternal's lifetime.
+    /**
+     * @brief Constructs a Pointer from a raw ObjectInternal pointer
+     * @param ptr Raw pointer to an ObjectInternal instance (must not be null)
+     * @note The Pointer takes ownership of the provided raw pointer,
+     *       and ptr must not be managed elsewhere.
+     */
+    explicit Pointer(ObjectInternal* ptr) noexcept : ptr_(ptr) { ; }
+
+   private:
+    std::unique_ptr<ObjectInternal>
+        ptr_;  ///< Unique pointer to manage ObjectInternal's lifetime
 };
 
+/**
+ * @typedef ConstPointer
+ * @brief Const-qualified Pointer type (read-only access to ObjectInternal)
+ */
 using ConstPointer = const Pointer;
 
 }  // namespace reflect

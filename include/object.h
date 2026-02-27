@@ -1,7 +1,7 @@
 /**
  * @file object.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This file defines the internal object representation for reflection.
+ * @brief Base class and reference types for reflection-enabled objects
  * @version 0.1
  * @date 2026-01-15
  *
@@ -12,17 +12,26 @@
 
 namespace reflect {
 /**
- * @brief Base class for internal object representation.
- *
- * This class serves as a base for all objects that will be reflected upon.
- * It provides a virtual destructor to ensure proper cleanup of derived classes.
+ * @struct ObjectInternal
+ * @brief Base class for reflection-enabled custom objects
+ * @note Inheritance from this class is required for custom types to support
+ *       reflection
  */
 struct ObjectInternal {
-    virtual ~ObjectInternal() = default;  ///< Virtual destructor for proper cleanup.
+    virtual ~ObjectInternal() = default;
 };
 
-using Object = ObjectInternal&;             ///< Alias for a reference to a non-const ObjectInternal.
-using ConstObject = const ObjectInternal&;  ///< Alias for a reference to a const ObjectInternal.
+/**
+ * @typedef Object
+ * @brief Mutable reference to ObjectInternal
+ */
+using Object = ObjectInternal&;
+
+/**
+ * @typedef ConstObject
+ * @brief Const reference to ObjectInternal
+ */
+using ConstObject = const ObjectInternal&;
 }  // namespace reflect
 
 #endif

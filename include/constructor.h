@@ -1,10 +1,7 @@
 /**
  * @file constructor.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This header file defines the Constructible template struct, which provides
- *        a mechanism for constructing objects of a specified type T using dynamic
- *        memory allocation. It also defines a type alias for a constructor function
- *        pointer.
+ * @brief CRTP utilities for reflection-aware object construction
  * @version 0.1
  * @date 2026-01-15
  *
@@ -17,26 +14,25 @@
 
 namespace reflect {
 /**
- * @brief A template struct that provides a way to construct objects of type T.
- *
- * This struct inherits from ObjectInternal and includes a static method
- * to create a new instance of T using dynamic memory allocation.
- *
- * @tparam T The type of object that can be constructed.
+ * @struct Constructible
+ * @brief CRTP base for reflection-enabled default-constructible types
+ * @tparam T Derived type to enable reflection-supported default construction
+ * @note T must be a default-constructible type
  */
 template <typename T>
 struct Constructible : public ObjectInternal {
    public:
     /**
-     * @brief Constructs a new instance of T.
-     *
-     * @return Pointer A pointer to the newly created instance of T.
+     * @brief Creates T instance wrapped in RAII-managed Pointer
+     * @return Pointer owning the new T instance
      */
-    static Pointer constructor() {
-        return Pointer(new T());
-    }
+    static Pointer constructor() { return Pointer(new T()); }
 };
 
+/**
+ * @typedef Constructor
+ * @brief Function pointer for reflection object construction
+ */
 using Constructor = Pointer (*)();
 };  // namespace reflect
 

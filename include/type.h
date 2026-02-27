@@ -1,55 +1,52 @@
 /**
  * @file type.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This file defines the TypeInternal structure, which is responsible for
- *        managing type information, including fields and constructors.
- * @version 0.1
- * @date 2026-01-15
+ * @brief Internal type metadata & access utilities (reflection system)
+ * @version 0.2
+ * @date 2026-02-22
  *
  * @copyright Copyright (c) 2026
  */
 #ifndef TYPE_H
 #define TYPE_H
 
+#include <cstring>
+
 #include "constructor.h"
-#include "field.h"
-#include "field/bool.h"
-#include "field/decimal.h"
-#include "field/integer.h"
 #include "field/object.h"
-#include "field/text.h"
-#include "repeated_field.h"
-#include "repeated_field/bool.h"
-#include "repeated_field/decimal.h"
-#include "repeated_field/integer.h"
+#include "field/type.h"
 #include "repeated_field/object.h"
-#include "repeated_field/text.h"
+#include "repeated_field/type.h"
 #include "type_id_info.h"
 
 namespace reflect {
-
+/**
+ * @struct TypeInternal
+ * @brief Internal type metadata
+ * @details Holds type name, constructor, fields, and type ID for registration
+ */
 struct TypeInternal : public ObjectInternal {
    public:
     /**
-     * @brief Constructs a TypeInternal instance with a given name and constructor.
-     *
-     * @param name The name of the type.
-     * @param constructor The constructor for creating instances of the type.
-     * @param type_id The type ID associated with the type.
+     * @brief Construct a new TypeInternal object
+     * @param name Type name
+     * @param constructor Constructor for the type
+     * @param type_id Unique type ID for registration
+     * @note Registers type with TypeIdInfo upon construction
      */
-    explicit TypeInternal(const char* name, const Constructor& constructor, const size_t type_id)
+    explicit TypeInternal(const char* name, const Constructor& constructor,
+                          const std::size_t type_id)
         : name_(name), constructor_(constructor), type_id_(type_id) {
         TypeIdInfo::GetInstance().regist_type(type_id_, name_);
     };
 
     /**
-     * @brief Registers a field with the type.
-     *
-     * @tparam C The class type that contains the field.
-     * @tparam T The type of the field.
-     * @param name The name of the field.
-     * @param ptr Pointer to the field in the class.
-     * @return TypeInternal& Reference to the current TypeInternal instance.
+     * @brief Add field to type
+     * @tparam C Class type containing the field
+     * @tparam T Field value type
+     * @param name Field name
+     * @param ptr Pointer to class member (T C::*)
+     * @return TypeInternal& for chaining
      */
     template <typename C, typename T>
     TypeInternal& field(const char* name, T C::* ptr) {
@@ -61,41 +58,42 @@ struct TypeInternal : public ObjectInternal {
     }
 
     /**
-     * @brief Gets the name of the type.
-     *
-     * @return const char* The name of the type.
+     * @brief Get type name
+     * @return const char* Type name
      */
-    const char* name() const { return name_; }
+    const char* name() const noexcept { return name_; }
 
     /**
-     * @brief Creates an instance of the type using the constructor.
-     *
-     * @return Pointer A pointer to the newly created instance.
+     * @brief Create instance of the type
+     * @return New instance (via constructor_)
      */
     Pointer create() const { return constructor_(); }
 
     /**
-     * @brief Gets the count of fields registered with the type.
-     *
-     * @return size_t The number of fields.
+     * @brief Get number of fields in type
+     * @return Field count (std::size_t)
      */
-    size_t field_count() const { return map_.size(); }
+    std::size_t field_count() const noexcept { return map_.size(); }
 
     /**
-     * @brief Gets a field by its index.
-     *
-     * @param i The index of the field.
-     * @return const Field& Reference to the field.
+     * @brief Get field by index
+     * @param i Field index (0-based)
+     * @return const Field& Field at index i
+     * @throws std::out_of_range If index is out of bounds
      */
-    const Field& field(size_t i) const { return map_[i]; }
+    const Field& field(std::size_t i) const {
+        if (i >= map_.size()) {
+            throw std::out_of_range("field index out of range");
+        }
+        return map_[i];
+    }
 
     /**
-     * @brief Gets a field by its name.
-     *
-     * @param name The name of the field.
-     * @return const Field& Reference to the field.
+     * @brief Get field by name
+     * @param name Field name to search for
+     * @return const Field& Matching field (or default_ if not found)
      */
-    const Field& field(const char* name) const {
+    const Field& field(const char* name) const noexcept {
         for (auto it = map_.begin(); it != map_.end(); it++) {
             if (std::strcmp((*it)->name(), name) == 0) {
                 return *it;
@@ -106,29 +104,37 @@ struct TypeInternal : public ObjectInternal {
 
     TypeInternal(const TypeInternal&) = delete;
     TypeInternal& operator=(const TypeInternal&) = delete;
-    TypeInternal(TypeInternal&&) = default;
-    TypeInternal& operator=(TypeInternal&&) = default;
 
    private:
     const Field default_;      ///< Default empty field
-    const char* name_;         ///< The name of the type.
-    Constructor constructor_;  ///< The constructor for creating instances of the type.
-    std::vector<Field> map_;   ///< A vector storing the fields associated with the type.
-    size_t type_id_;           ///< The type id of the type.
+    const char* name_;         ///< Type name
+    Constructor constructor_;  ///< Type constructor
+    std::vector<Field> map_;   ///< Type fields (vector of Field)
+    std::size_t type_id_;      ///< Unique type ID
 };
 
 /**
- * @brief A template class representing a type with a given name and constructor.
+ * @struct TypeBase
+ * @brief Template base class for TypeInternal(object types only)
+ * @tparam T Object type (enabled if is_object<T>::value is true)
  */
-template <typename T>
+template <typename T,
+          typename std::enable_if<is_object<T>::value, int>::type = 0>
 struct TypeBase : public TypeInternal {
    public:
+    /**
+     * @brief Construct a new TypeBase object
+     * @param name Type name
+     * @param constructor Constructor for the type
+     * @note Type ID = get_type_id<T>()
+     */
     explicit TypeBase(const char* name, const Constructor& constructor)
         : TypeInternal(name, constructor, get_type_id<T>()) {};
 };
 
 /**
- * @brief A unique pointer to a TypeInternal object.
+ * @typedef Type
+ * @brief Unique pointer to TypeInternal
  */
 using Type = std::unique_ptr<TypeInternal>;
 
