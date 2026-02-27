@@ -40,7 +40,10 @@ struct TypeIdInfo {
      * @param id The type ID to be registered.
      * @param name The type name associated with the type ID.
      */
-    void regist_type(size_t id, const char* name) { type_info_.emplace_back(TypeInfo{id, name}); }
+    void regist_type(size_t id, const char* name) { 
+        if(get_type_name(id) != nullptr) return;
+        type_info_.emplace_back(TypeInfo{id, name}); 
+    }
 
     /**
      * @brief Retrieves the type name associated with a given type ID.
