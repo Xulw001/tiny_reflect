@@ -1,161 +1,190 @@
 /**
  * @file field.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This file defines the FieldInternal structure and FieldBase template for handling
- *        reflection of various data types in a generic manner. It provides methods to get
- *        and set values of different types, including boolean, string, integral, and
- *        floating-point types.
- * @version 0.2
- * @date 2026-01-22
+ * @brief Internal field metadata & access utilities (reflection system)
+ * @version 0.3
+ * @date 2026-02-22
  *
  * @copyright Copyright (c) 2026
  */
 #ifndef FIELD_H
 #define FIELD_H
+
 #include <memory>
 
-#include "type/boolean.h"
-#include "type/decimal.h"
-#include "type/integer.h"
-#include "type/text.h"
+#include "object.h"
+#include "type/exception.h"
+#include "type/reference.h"
+#include "type/value.h"
 #include "type_traits.h"
 
 namespace reflect {
-
 /**
- * @brief The FieldInternal struct provides an interface for accessing and modifying
- *        fields of different types in a reflective manner.
+ * @struct FieldInternal
+ * @brief Representation a field in an object
+ * @details Holds field name/type ID/array/object flags, provides methods for
+ *          getting and setting field values,
  */
 struct FieldInternal : public ObjectInternal {
    public:
     /**
-     * @brief Construct a new FieldInternal object.
-     *
-     * @param name The name of the field.
-     * @param type The type of the field.
-     * @param array Indicates if the field is an array.
+     * @brief Construct a new FieldInternal object
+     * @param name Field name (non-null)
+     * @param type_id Field type ID
+     * @param array Whether the field is an array
+     * @param object Whether the field is an object
      */
-    explicit FieldInternal(const char* name, TypeEnum type, bool array)
-        : name_(name), type_(type), array_(array) {};
+    explicit FieldInternal(const char* name, std::size_t type_id, bool array,
+                           bool object) noexcept
+        : name_(name), type_id_(type_id), array_(array), object_(object) {};
 
     /**
-     * @brief Get the type of the field.
-     *
-     * @return TypeEnum The type of the field.
+     * @brief Get field name
+     * @return const char* Field name
      */
-    TypeEnum type() const { return type_; }
+    const char* name() const noexcept { return name_; }
 
     /**
-     * @brief Get the name of the field.
-     *
-     * @return const char* The name of the field.
+     * @brief Check if field is array
+     * @return true if field is an array, false otherwise
      */
-    const char* name() const { return name_; }
+    bool is_array() const noexcept { return array_; }
 
     /**
-     * @brief Check if the field is an array.
-     *
-     * @return true if the field is an array, false otherwise.
+     * @brief Check if field is object
+     * @return true if field is an object, false otherwise
      */
-    bool is_array() const { return array_; }
+    bool is_object() const noexcept { return object_; }
 
     /**
-     * @brief Get the type id of the field.
-     *
-     * @return size_t The type id of the field.
+     * @brief Get field type ID
+     * @return Field type ID (std::size_t)
      */
-    virtual size_t type_id() const { return type_; }
+    virtual std::size_t type_id() const noexcept { return type_id_; }
 
-    // Template methods for getting values of different types
+    /**
+     * @brief Get field value from Object
+     * @tparam T Type to get (decayed to U via std::decay)
+     * @tparam U Decayed type of T (default)
+     * @param obj Object to get field from
+     * @return Reference to field value (cast to T)
+     * @throws ReflectException If type does not match field type
+     */
+    template <typename T, typename U = typename std::decay<T>::type>
+    T& get(Object obj) const {
+        if (type_id_ != get_type_id<U>()) {
+            throw ReflectException("type mismatch!");
+        }
+        return GetField(obj).cast<U>();
+    }
+
+    /**
+     * @brief Set field value with lvalue reference
+     * @tparam T Type of the value to set
+     * @param obj Object to set field on
+     * @param value Lvalue reference to value
+     * @throws ReflectException If type does not match field type
+     */
     template <typename T>
-    typename std::enable_if<std::is_same<T, bool>::value, bool>::type get(ConstObject obj) const {
-        return getBool(obj).get();
-    }
-
-    template <typename T>
-    typename std::enable_if<std::is_same<T, std::string>::value, std::string>::type get(
-        ConstObject obj) const {
-        return getText(obj).get();
-    }
-
-    template <typename T>
-    typename std::enable_if<std::is_integral<T>::value && !std::is_same<T, bool>::value, T>::type
-    get(ConstObject obj) const {
-        return getInteger(obj).get<T>();
-    }
-
-    template <typename T>
-    typename std::enable_if<std::is_floating_point<T>::value, T>::type get(ConstObject obj) const {
-        return getDecimal(obj).get<T>();
+    void set(Object obj, T& value) const {
+        if (type_id_ != get_type_id<T>()) {
+            throw ReflectException("type mismatch!");
+        }
+        SetField(obj, Reference(value));
     }
 
     /**
-     * @brief Get the object associated with this field.
-     *
-     * @param obj The object from which to get the field.
-     * @return ConstObject The associated object.
+     * @brief Set field value with rvalue reference
+     * @tparam T Type of the value to set
+     * @param obj Object to set field on
+     * @param value Rvalue reference to value
+     * @note This overload allows setting field with move semantics
+     * @throws ReflectException If type does not match field type
      */
-    virtual ConstObject getObject(ConstObject obj) const { return obj; };
-
-    /**
-     * @brief Get the object associated with this field.
-     *
-     * @param obj The object from which to get the field.
-     * @return Object The associated object.
-     * */
-    virtual Object getObject(Object obj) const { return obj; };
-
-    // Template methods for setting values of different types
-    void set(Object obj, bool v) const { setBool(obj, Boolean(v)); }
-    void set(Object obj, const char* v) const { setText(obj, Text(v)); }
-    void set(Object obj, const std::string& v) const { setText(obj, Text(v)); }
-
-    template <typename T, typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
-    void set(Object obj, T v) const {
-        setInteger(obj, Integer(v));
-    }
-
-    template <typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 1>
-    void set(Object obj, T v) const {
-        setDecimal(obj, Decimal(v));
+    template <typename T>
+    void set(Object obj, T&& value) const {
+        if (type_id_ != get_type_id<T>()) {
+            throw ReflectException("type mismatch!");
+        }
+        SetField(obj, Value(in_place_type_t<T>{}, value));
     }
 
     /**
-     * @brief Set the object associated with this field.
-     *
-     * @param obj The object to set the field on.
-     * @param o The object to associate with this field.
+     * @brief Get object from field
+     * @param obj Object to get field from
+     * @return Object representing the field value
+     * @note Override in derived classes for actual object retrieval
+     * @throws ReflectException If field is not an object
      */
-    virtual void set(Object obj, ConstObject o) const { ; }
+    virtual Object GetObject(Object obj) const {
+        if (!object_) {
+            throw ReflectException::format("Field[%s] is not an object", name_);
+        }
+        return obj;
+    }
+
+    /**
+     * @brief Set object to field
+     * @param obj Object to set field on
+     * @param sub Sub-object to set
+     * @note Override in derived classes for actual object assignment
+     * @throws ReflectException If field is not an object
+     */
+    virtual void SetObject(Object obj, Object sub) const {
+        if (!object_) {
+            throw ReflectException::format("Field[%s] is not an object", name_);
+        }
+    }
 
    protected:
-    // Protected methods for getting values
-    virtual Boolean getBool(ConstObject obj) const { return Boolean(true); }
-    virtual Integer getInteger(ConstObject obj) const { return Integer(0); }
-    virtual Text getText(ConstObject obj) const { return Text(""); }
-    virtual Decimal getDecimal(ConstObject obj) const { return Decimal(0.0f); };
+    /**
+     * @brief Get the field value as Reference
+     * @param obj Object to get field from
+     * @return Reference to field value
+     * @note Override in derived classes for actual field value
+     */
+    virtual Reference GetField(Object obj) const { return Reference(obj); };
 
-    // Protected methods for setting values
-    virtual void setBool(Object obj, const Boolean& v) const { ; }
-    virtual void setInteger(Object obj, const Integer& v) const { ; }
-    virtual void setText(Object obj, const Text& v) const { ; }
-    virtual void setDecimal(Object obj, const Decimal& v) const { ; }
+    /**
+     * @brief Set field with Reference
+     * @param obj Object to set field on
+     * @param ref Reference to set
+     * @note Override in derived classes for actual field assignment
+     */
+    virtual void SetField(Object obj, Reference ref) const { ; }
+
+    /**
+     * @brief Set field with Value
+     * @param obj Object to set field on
+     * @param val Value to set
+     * @note Override in derived classes for actual field assignment
+     */
+    virtual void SetField(Object obj, Value val) const { ; }
 
    private:
-    const char* name_;  ///< The name of the field.
-    TypeEnum type_;     ///< The type of the field.
-    bool array_;        ///< Indicates if the field is an array.
+    const char* name_;     ///< The name of the field
+    std::size_t type_id_;  ///< The type Id of the field
+    bool array_;           ///< Indicates if the field is an array
+    bool object_;          ///< Indicates if the field is an object
 };
 
 /**
- * @brief The FieldBase template provides a base for creating field types with specific
- *        characteristics.
+ * @struct FieldBase
+ * @brief Field template base class (inherits FieldInternal)
+ * @tparam C Class type containing the field
+ * @tparam T Field value type
+ * @tparam array Whether T is a repeated (array) type
+ * @tparam object Whether T is an object type
+ * @tparam const_disable Disables const types
  */
-template <typename C, typename T, typename = void>
+template <typename C, typename T, bool array = is_repeated<T>::value,
+          bool object = is_object<typename value_type<T>::type>::value,
+          typename = const_disable<T>>
 struct FieldBase : public FieldInternal {};
 
 /**
- * @brief A unique pointer type for FieldInternal.
+ * @typedef Field
+ * @brief Unique pointer to FieldInternal
  */
 using Field = std::unique_ptr<FieldInternal>;
 

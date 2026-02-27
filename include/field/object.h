@@ -1,14 +1,9 @@
 /**
  * @file object.h
  * @author xulw (nevermore.xulw@hotmail.com)
- * @brief This header file defines the FieldBase template structure
- *        for the type is derived from ObjectInternal.
- *
- * @tparam C The class type that contains the member variable.
- * @tparam T The type of the member variable.
- *
- * @version 0.1
- * @date 2026-01-16
+ * @brief Object field metadata + reflection utilities (non-array)
+ * @version 0.2
+ * @date 2026-02-23
  *
  * @copyright Copyright (c) 2026
  */
@@ -16,65 +11,47 @@
 #define FIELD_OBJECT_H
 
 #include "field.h"
-#include "type_id.h"
+#include "type_traits.h"
 
 namespace reflect {
+/**
+ * @struct FieldBase
+ * @brief Field type for non-array, object fields
+ * @details Holds C's T member pointer; implements object field get/set
+ * @tparam C Containing class type
+ * @tparam T Field value type (non-const, non-array, object)
+ * @see FieldInternal
+ */
 template <typename C, typename T>
-struct FieldBase<C, T, typename std::enable_if<std::is_base_of<ObjectInternal, T>::value>::type>
-    : public FieldInternal {
+struct FieldBase<C, T, false, true, const_disable<T>> : public FieldInternal {
    public:
     /**
-     * @brief Constructs a FieldBase for an ObjectInternal type.
-     *
-     * @param name The name of the field.
-     * @param ptr A pointer to the ObjectInternal member of class C.
+     * @brief Constructor for FieldBase
+     * @param name Field name
+     * @param ptr Pointer to class member (T C::*)
      */
     explicit FieldBase(const char* name, T C::* ptr)
-        : ptr_(ptr), type_id_(get_type_id<T>()), FieldInternal(name, TypeEnum::CPPTYPE_OBJECT, false) {}
+        : ptr_(ptr), FieldInternal(name, get_type_id<T>(), false, true) {}
 
     FieldBase(const FieldBase&) = delete;
     FieldBase& operator=(const FieldBase&) = delete;
 
     /**
-     * @brief Retrieves the type ID of the member.
-     *
-     * @return The type ID of the member.
+     * @brief Get object field value
      */
-    virtual size_t type_id() const { return type_id_; }
-
-    /**
-     * @brief Retrieves the ObjectInternal from the given object.
-     *
-     * @param obj The object from which to retrieve the ObjectInternal.
-     * @return The ObjectInternal of the member.
-     */
-    virtual ConstObject getObject(ConstObject obj) const {
-        return static_cast<const C&>(obj).*ptr_;
-    };
-
-    /**
-     * @brief Retrieves the ObjectInternal from the given object.
-     *
-     * @param obj The object from which to retrieve the ObjectInternal.
-     * @return The ObjectInternal of the member.
-     */
-    virtual Object getObject(Object obj) const {
+    virtual Object GetObject(Object obj) const override {
         return static_cast<C&>(obj).*ptr_;
     };
 
     /**
-     * @brief Sets the ObjectInternal of the member in the given object.
-     *
-     * @param obj The object in which to set the ObjectInternal.
-     * @param o The ObjectInternal to set.
+     * @brief Set object field value
      */
-    virtual void set(Object obj, ConstObject o) const {
-        static_cast<C&>(obj).*ptr_ = static_cast<const T&>(o);
+    virtual void SetObject(Object obj, Object o) const override {
+        static_cast<C&>(obj).*ptr_ = static_cast<T&>(o);
     }
 
    private:
-    T C::* ptr_;      ///< Pointer to the object member
-    size_t type_id_;  ///< The type ID of the object
+    T C::* ptr_;  ///< Pointer to C's T object member (field)
 };
 }  // namespace reflect
 
