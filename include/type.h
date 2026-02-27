@@ -53,7 +53,10 @@ struct TypeInternal : public ObjectInternal {
      */
     template <typename C, typename T>
     TypeInternal& field(const char* name, T C::* ptr) {
-        map_.emplace_back(new FieldBase<C, T>(name, ptr));
+        auto& it = field(name);
+        if (it == default_) {
+            map_.emplace_back(new FieldBase<C, T>(name, ptr));
+        }
         return *this;
     }
 
@@ -98,7 +101,7 @@ struct TypeInternal : public ObjectInternal {
                 return *it;
             }
         }
-        return *map_.end();
+        return default_;
     }
 
     TypeInternal(const TypeInternal&) = delete;
@@ -107,6 +110,7 @@ struct TypeInternal : public ObjectInternal {
     TypeInternal& operator=(TypeInternal&&) = default;
 
    private:
+    const Field default_;      ///< Default empty field
     const char* name_;         ///< The name of the type.
     Constructor constructor_;  ///< The constructor for creating instances of the type.
     std::vector<Field> map_;   ///< A vector storing the fields associated with the type.
