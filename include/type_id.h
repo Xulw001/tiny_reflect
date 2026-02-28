@@ -12,6 +12,7 @@
 
 #include <atomic>
 
+#include "type_enum.h"
 #include "type_traits.h"
 
 namespace reflect {
@@ -20,7 +21,7 @@ namespace reflect {
  * @brief Default configuration for type ID generation, starting from 0x0.
  */
 struct DefaultConfig {
-    const static std::size_t CPPTYPE = 0x0;
+    const static std::size_t CPPTYPE = TypeEnum::CPPTYPE_MAX;
 };
 
 /**
@@ -86,13 +87,15 @@ using ConfigSelector = selector_t<is_object<U>, CustomConfig, DefaultConfig>;
 /**
  * @brief Gets fixed unique type ID for T (ConfigSelector-driven)
  * @tparam T Non-reference type to get unique ID for (enabled via enable_if)
- * @return Fixed unique size_t ID for T (from TypeId<T, ConfigSelector<T>>)
- * @note Enabled only for non-reference types; volatile qualifiers are ignored
+ * @return Fixed Unique ID (internal type → TypeEnum; others → TypeId)
+ * @note Volatile qualifiers ignored; disabled for reference types
  */
 template <typename T,
           typename std::enable_if<!std::is_reference<T>::value, int>::type = 0>
-inline size_t get_type_id() {
-    return TypeId<T, ConfigSelector<T>>::get_type_id();
+inline std::size_t get_type_id() {
+    return is_internel_type<T>::value
+               ? is_internel_type<T>::type_id
+               : TypeId<T, ConfigSelector<T>>::get_type_id();
 }
 
 }  // namespace reflect
