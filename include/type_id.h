@@ -91,7 +91,7 @@ using ConfigSelector = selector_t<is_object<U>, CustomConfig, DefaultConfig>;
  */
 template <typename T,
           typename std::enable_if<!std::is_reference<T>::value, int>::type = 0>
-size_t get_type_id() {
+inline size_t get_type_id() {
     return TypeId<T, ConfigSelector<T>>::get_type_id();
 }
 
