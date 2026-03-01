@@ -87,7 +87,7 @@ using ConfigSelector = selector_t<is_object<U>, CustomConfig, DefaultConfig>;
 /**
  * @brief Gets fixed unique type ID for T (ConfigSelector-driven)
  * @tparam T Non-reference type to get unique ID for (enabled via enable_if)
- * @return Fixed Unique ID (internal type → TypeEnum; others → TypeId)
+ * @return Fixed Unique ID (internal type -> TypeEnum; others -> TypeId)
  * @note Volatile qualifiers ignored; disabled for reference types
  */
 template <typename T,
