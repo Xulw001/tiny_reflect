@@ -23,7 +23,7 @@ namespace reflect {
  * @struct FieldInternal
  * @brief Representation a field in an object
  * @details Holds field name/type ID/array/object flags, provides methods for
- *          getting and setting field values,
+ *          getting and setting field values, and provides type checking.
  */
 struct FieldInternal : public ObjectInternal {
    public:
