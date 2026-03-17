@@ -88,6 +88,18 @@ class Value {
         }
     }
 
+    Value& operator=(Value&& other) {
+        if (!other.HasValue()) {
+            Reset();
+        } else if (this != &other) {
+            Reset();
+            Args args;
+            args.value = this;
+            other.manager_(Oper::Swap, &other, &args);
+        }
+        return *this;
+    }
+
     /**
      * @brief In-place constructs Value of type T
      * @tparam T Type of the value to store
@@ -192,23 +204,23 @@ class Value {
         static void manage(Oper oper, const Value* value, Args* args) {
             auto ptr = reinterpret_cast<const T*>(&value->storage_.buffer_);
             switch (oper) {
-                case Oper::Access:
-                    args->ref.pointer_ = const_cast<T*>(ptr);
-                    args->ref.type_id_ = get_type_id<T>();
-                    break;
-                case Oper::TypeId:
-                    args->type_id = get_type_id<T>();
-                    break;
-                case Oper::Swap:
-                    ::new (&args->value->storage_.buffer_)
-                        T(std::move(*const_cast<T*>(ptr)));
-                    ptr->~T();
-                    args->value->manager_ = value->manager_;
-                    const_cast<Value*>(value)->manager_ = nullptr;
-                    break;
-                case Oper::Destroy:
-                    ptr->~T();
-                    break;
+            case Oper::Access:
+                args->ref.pointer_ = const_cast<T*>(ptr);
+                args->ref.type_id_ = get_type_id<T>();
+                break;
+            case Oper::TypeId:
+                args->type_id = get_type_id<T>();
+                break;
+            case Oper::Swap:
+                ::new (&args->value->storage_.buffer_)
+                    T(std::move(*const_cast<T*>(ptr)));
+                ptr->~T();
+                args->value->manager_ = value->manager_;
+                const_cast<Value*>(value)->manager_ = nullptr;
+                break;
+            case Oper::Destroy:
+                ptr->~T();
+                break;
             }
         }
     };
@@ -238,21 +250,21 @@ class Value {
         static void manage(Oper oper, const Value* value, Args* args) {
             auto ptr = reinterpret_cast<const T*>(value->storage_.ptr_);
             switch (oper) {
-                case Oper::Access:
-                    args->ref.pointer_ = const_cast<T*>(ptr);
-                    args->ref.type_id_ = get_type_id<T>();
-                    break;
-                case Oper::TypeId:
-                    args->type_id = get_type_id<T>();
-                    break;
-                case Oper::Swap:
-                    args->value->storage_.ptr_ = value->storage_.ptr_;
-                    args->value->manager_ = value->manager_;
-                    const_cast<Value*>(value)->manager_ = nullptr;
-                    break;
-                case Oper::Destroy:
-                    delete ptr;
-                    break;
+            case Oper::Access:
+                args->ref.pointer_ = const_cast<T*>(ptr);
+                args->ref.type_id_ = get_type_id<T>();
+                break;
+            case Oper::TypeId:
+                args->type_id = get_type_id<T>();
+                break;
+            case Oper::Swap:
+                args->value->storage_.ptr_ = value->storage_.ptr_;
+                args->value->manager_ = value->manager_;
+                const_cast<Value*>(value)->manager_ = nullptr;
+                break;
+            case Oper::Destroy:
+                delete ptr;
+                break;
             }
         }
     };
